@@ -1,0 +1,10 @@
+.vscode/
+*.pyc
+.idea/
+__pycache__/
+*.db
+**/*.iml
+.DS_Store
+venv/
+.venv/
+docs/docs/.nota/config.ini
