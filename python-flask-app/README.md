@@ -7,11 +7,11 @@ After cloning the project:
   ```bash 
   python3 -m venv venv
   ```
--- Activate the virtual environment:
+- Activate the virtual environment:
   ```bash
   source .venv/Scripts/activate
   ```
--- Install the dependencies:
+- Install the dependencies:
   ```bash
   pip install -r requirements.txt
   ```
