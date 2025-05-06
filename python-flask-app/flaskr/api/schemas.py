@@ -8,18 +8,18 @@ class CarMakeEntry(CarMakeUpdate):
 
 
 class CarModelUpdate(Schema):
-    name = fields.Str()
-    year = fields.Int()
-    price = fields.Float()
-    make_id = fields.Int(required=True, load_only=True)
+    name = fields.Str(required=True)
+    year = fields.Int(required=True)
+    price = fields.Float(required=True)
+    make_id = fields.Int(required=True)
 
 class CarModelEntry(CarModelUpdate):
     id = fields.Int(dump_only=True)
 
 
 class CarPartUpdate(Schema):
-    name = fields.Str()
-    price = fields.Float()
+    name = fields.Str(required=True)
+    price = fields.Float(required=True)
 
 class CarPartEntry(CarPartUpdate):
     id = fields.Int(dump_only=True)

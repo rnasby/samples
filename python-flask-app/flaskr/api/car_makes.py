@@ -1,4 +1,5 @@
 from flask import request
+from http import HTTPStatus
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -12,20 +13,28 @@ blp = Blueprint("car-makes", __name__, description="Operations on car-makes")
 
 @blp.route("/car-makes/<string:make_id>")
 class CarMakesWithId(MethodView):
-    @blp.response(200, CarMake)
+    @blp.response(HTTPStatus.OK, CarMake)
     def get(self, make_id):
-        return CarMakeORM.query.get_or_404(make_id)
+        return self.__get(make_id)
+
+    def __get(self, make_id):
+        make = db.session.get(CarMakeORM, make_id)
+
+        if not make:
+            abort(HTTPStatus.NOT_FOUND, message="Make not found.")
+
+        return make
 
     def delete(self, make_id):
-        make = CarMakeORM.query.get_or_404(make_id)
+        make = self.__get(make_id)
         db.session.delete(make)
         db.session.commit()
-        return {"message": "Make deleted"}, 204
+        return {"message": "Make deleted"}, HTTPStatus.NO_CONTENT
 
     @blp.arguments(CarMakeUpdate)
-    @blp.response(204)
+    @blp.response(HTTPStatus.NO_CONTENT)
     def put(self, make_data, make_id):
-        make = CarMakeORM.query.get_or_404(make_id)
+        make = self.__get(make_id)
         make.name = make_data["name"]
 
         db.session.add(make)
@@ -33,21 +42,21 @@ class CarMakesWithId(MethodView):
 
 @blp.route("/car-makes")
 class CarMakes(MethodView):
-    @blp.response(200, CarMake(many=True))
+    @blp.response(HTTPStatus.OK, CarMakeEntry(many=True))
     def get(self):
-        return CarMakeORM.query.all()
+        return db.session.query(CarMakeORM)
 
     @blp.arguments(CarMakeUpdate)
-    @blp.response(201, CarMake)
+    @blp.response(HTTPStatus.CREATED, CarMakeEntry)
     def post(self, make_data):
         make = CarMakeORM(**make_data)
         try:
             db.session.add(make)
             db.session.commit()
         except IntegrityError:
-            abort(400, message="A make with that name already exists.")
+            abort(HTTPStatus.BAD_REQUEST, message="A make with that name already exists.")
         except SQLAlchemyError:
-            abort(500, message="An error occurred creating the make.")
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, message="An error occurred creating the make.")
 
         headers = {'location': request.base_url + "/" + str(make.id)}
 
