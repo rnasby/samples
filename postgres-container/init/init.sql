@@ -55,9 +55,9 @@ insert into car_part (name, price) values
 drop table if exists car_model_part;
 
 create table car_model_part (
+    id serial primary key,
     model_id integer not null,
-    part_id integer not null,
-    primary key (model_id, part_id)
+    part_id integer not null
 );
 
 insert into car_model_part (model_id, part_id) values
