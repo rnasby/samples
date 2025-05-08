@@ -6,35 +6,34 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from flaskr.db import db
 from flaskr.orm import CarModelORM
-from flaskr.api.schemas import CarModel, CarModelEntry, CarModelUpdate
+from flaskr.api.schemas import CarModel, CarModelEntry, CarModelChange
 
-blp = Blueprint("car-models", __name__, description="Operations on car-makes")
+blp = Blueprint("Car Models", __name__, description="Operations on car models")
 
+def get_car_model(model_id):
+    model = db.session.get(CarModelORM, model_id)
+
+    if not model:
+        abort(HTTPStatus.NOT_FOUND, message="Car model not found.")
+
+    return model
 
 @blp.route("/car-models/<string:model_id>")
 class CarModelsId(MethodView):
     @blp.response(HTTPStatus.OK, CarModel)
     def get(self, model_id):
-        return self.__get(model_id)
-
-    def __get(self, model_id):
-        model = db.session.get(CarModelORM, model_id)
-
-        if not model:
-            abort(HTTPStatus.NOT_FOUND, message="Car model not found.")
-
-        return model
+        return get_car_model(model_id)
 
     def delete(self, model_id):
-        model = self.__get(model_id)
+        model = get_car_model(model_id)
         db.session.delete(model)
         db.session.commit()
         return {"message": "Car model deleted"}, HTTPStatus.NO_CONTENT
 
-    @blp.arguments(CarModelUpdate)
+    @blp.arguments(CarModelChange)
     @blp.response(HTTPStatus.NO_CONTENT)
     def put(self, req_data, model_id):
-        model = self.__get(model_id)
+        model = get_car_model(model_id)
         model.name = req_data["name"]
         model.year = req_data["year"]
         model.price = req_data["price"]
@@ -50,7 +49,7 @@ class CarModels(MethodView):
     def get(self):
         return db.session.query(CarModelORM)
 
-    @blp.arguments(CarModelUpdate)
+    @blp.arguments(CarModelChange)
     @blp.response(HTTPStatus.CREATED, CarModelEntry)
     def post(self, req_data):
         model = CarModelORM(**req_data)

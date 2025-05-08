@@ -1,38 +1,36 @@
 from marshmallow import Schema, fields
 
-class CarMakeUpdate(Schema):
+class CarMakeChange(Schema):
     name = fields.Str(required=True)
 
-class CarMakeEntry(CarMakeUpdate):
+class CarMakeEntry(CarMakeChange):
     id = fields.Int(dump_only=True)
 
 
-class CarModelUpdate(Schema):
+class CarModelChange(Schema):
     name = fields.Str(required=True)
     year = fields.Int(required=True)
     price = fields.Float(required=True)
     make_id = fields.Int(required=True)
 
-class CarModelEntry(CarModelUpdate):
+class CarModelEntry(CarModelChange):
     id = fields.Int(dump_only=True)
 
 
-class CarPartUpdate(Schema):
+class CarPartChange(Schema):
     name = fields.Str(required=True)
     price = fields.Float(required=True)
 
-class CarPartEntry(CarPartUpdate):
+class CarPartEntry(CarPartChange):
     id = fields.Int(dump_only=True)
 
 # ------------------------------ Combo schemas ---------------------------------------
 
 class CarMake(CarMakeEntry):
-    car_models = fields.List(fields.Nested(CarModelEntry()), dump_only=True)
+    car_models = fields.List(fields.Nested("CarModel"), dump_only=True)
 
 class CarModel(CarModelEntry):
-    car_make_id = fields.Int(required=True, load_only=True)
     car_make = fields.Nested(CarMakeEntry(), dump_only=True)
 
 class CarPart(CarPartEntry):
-    pass
-
+    car_model = fields.Nested(CarModelEntry(), dump_only=True)

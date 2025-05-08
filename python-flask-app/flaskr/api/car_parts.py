@@ -6,35 +6,34 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from flaskr.db import db
 from flaskr.orm import CarPartORM
-from flaskr.api.schemas import CarPart, CarPartEntry, CarPartUpdate
+from flaskr.api.schemas import CarPart, CarPartEntry, CarPartChange
 
-blp = Blueprint("car-parts", __name__, description="Operations on car-parts")
+blp = Blueprint("Car Parts", __name__, description="Operations on car parts")
 
+def get_car_part(part_id):
+    part = db.session.get(CarPartORM, part_id)
+
+    if not part:
+        abort(HTTPStatus.NOT_FOUND, message="Car part not found.")
+
+    return part
 
 @blp.route("/car-parts/<string:part_id>")
 class CarPartsWithId(MethodView):
     @blp.response(HTTPStatus.OK, CarPart)
     def get(self, part_id):
-        return self.__get(part_id)
-
-    def __get(self, part_id):
-        part = db.session.get(CarPartORM, part_id)
-
-        if not part:
-            abort(HTTPStatus.NOT_FOUND, message="Car part not found.")
-
-        return part
+        return get_car_part(part_id)
 
     def delete(self, part_id):
-        make = self.__get(part_id)
+        make = get_car_part(part_id)
         db.session.delete(make)
         db.session.commit()
         return {"message": "Car part deleted"}, HTTPStatus.NO_CONTENT
 
-    @blp.arguments(CarPartUpdate)
+    @blp.arguments(CarPartChange)
     @blp.response(HTTPStatus.NO_CONTENT)
     def put(self, part_data, part_id):
-        part = self.__get(part_id)
+        part = get_car_part(part_id)
         part.price = part_data["price"]
         part.name = part_data["name"]
 
@@ -48,7 +47,7 @@ class CarParts(MethodView):
     def get(self):
         return db.session.query(CarPartORM)
 
-    @blp.arguments(CarPartUpdate)
+    @blp.arguments(CarPartChange)
     @blp.response(HTTPStatus.CREATED, CarPartEntry)
     def post(self, part_data):
         part = CarPartORM(**part_data)

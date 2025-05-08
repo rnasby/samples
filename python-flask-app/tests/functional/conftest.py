@@ -6,7 +6,7 @@ from flaskr.app import create_app
 
 @pytest.fixture(scope='module')
 def test_client():
-    os.environ['CONFIG_TYPE'] = 'config.TestingConfig'
+    os.environ['DEBUG_SQL'] = '1'
     flask_app = create_app()
 
     with flask_app.test_client() as testing_client:

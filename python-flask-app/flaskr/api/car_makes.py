@@ -6,35 +6,35 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from flaskr.db import db
 from flaskr.orm import CarMakeORM
-from flaskr.api.schemas import CarMake, CarMakeEntry, CarMakeUpdate
+from flaskr.api.schemas import CarMake, CarMakeEntry, CarMakeChange
 
 
-blp = Blueprint("car-makes", __name__, description="Operations on car-makes")
+blp = Blueprint("Car Makes", __name__, description="Operations on car makes")
+
+def get_car_make(make_id):
+    make = db.session.get(CarMakeORM, make_id)
+
+    if not make:
+        abort(HTTPStatus.NOT_FOUND, message="Make not found.")
+
+    return make
 
 @blp.route("/car-makes/<string:make_id>")
 class CarMakesWithId(MethodView):
     @blp.response(HTTPStatus.OK, CarMake)
     def get(self, make_id):
-        return self.__get(make_id)
-
-    def __get(self, make_id):
-        make = db.session.get(CarMakeORM, make_id)
-
-        if not make:
-            abort(HTTPStatus.NOT_FOUND, message="Make not found.")
-
-        return make
+        return get_car_make(make_id)
 
     def delete(self, make_id):
-        make = self.__get(make_id)
+        make = get_car_make(make_id)
         db.session.delete(make)
         db.session.commit()
         return {"message": "Make deleted"}, HTTPStatus.NO_CONTENT
 
-    @blp.arguments(CarMakeUpdate)
+    @blp.arguments(CarMakeChange)
     @blp.response(HTTPStatus.NO_CONTENT)
     def put(self, make_data, make_id):
-        make = self.__get(make_id)
+        make = get_car_make(make_id)
         make.name = make_data["name"]
 
         db.session.add(make)
@@ -46,7 +46,7 @@ class CarMakes(MethodView):
     def get(self):
         return db.session.query(CarMakeORM)
 
-    @blp.arguments(CarMakeUpdate)
+    @blp.arguments(CarMakeChange)
     @blp.response(HTTPStatus.CREATED, CarMakeEntry)
     def post(self, make_data):
         make = CarMakeORM(**make_data)
