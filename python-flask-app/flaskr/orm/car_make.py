@@ -9,4 +9,4 @@ class CarMakeORM(db.Model):
     id = sa.Column("id", sa.Integer(), primary_key=True)
     name = sa.Column("name", sa.String(255), unique=True, nullable=False)
 
-    models = sa_orm.relationship("CarModelORM", back_populates="car_make", lazy="dynamic", cascade="all, delete-orphan")
+    models = sa_orm.relationship("CarModelORM", back_populates="make", cascade="all, delete-orphan")

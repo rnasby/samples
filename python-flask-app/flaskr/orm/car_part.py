@@ -9,4 +9,4 @@ class CarPartORM(db.Model):
     name = sa.Column("name", sa.String(255), unique=False, nullable=False)
     price = sa.Column("price", sa.Float(precision=2), unique=False, nullable=False)
 
-    models = db.relationship("CarModelORM", back_populates="parts", secondary="car_model_part", lazy="dynamic")
+    models = db.relationship("CarModelORM", back_populates="parts", secondary="car_model_part")

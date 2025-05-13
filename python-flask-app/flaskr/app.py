@@ -14,10 +14,14 @@ from flaskr.api.car_models import blp as car_models_blp
 from flaskr.api.car_parts import blp as car_parts_blp
 from flaskr.api.car_models_parts import blp as car_models_parts_blp
 
+is_check_debug_sql = True
 DEFAULT_DB_URL = "sqlite://"
 
 def create_app(db_url=None):
-    # Will default to an in-memory database.
+    """
+    Will default to an in-memory database.
+    """
+    global is_check_debug_sql
 
     app = Flask(__name__)
     app.config["API_TITLE"] = "Cars REST API"
@@ -36,14 +40,15 @@ def create_app(db_url=None):
     db.init_app(app)
     api = Api(app)
 
-    if os.getenv("DEBUG_SQL", "0") == "1":
-       @event.listens_for(Engine, "before_cursor_execute")
-       def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-          print("SQL:", statement, parameters)
+    if is_check_debug_sql and os.getenv("DEBUG_SQL", "0") == "1" :
+        is_check_debug_sql = False
+        @event.listens_for(Engine, "before_cursor_execute")
+        def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+            print("SQL:", statement, parameters)
 
     if app.config["SQLALCHEMY_DATABASE_URI"] == DEFAULT_DB_URL:
-       with app.app_context():
-          db.create_all()
+        with app.app_context():
+            db.create_all()
 
     api.register_blueprint(car_makes_blp)
     api.register_blueprint(car_models_blp)

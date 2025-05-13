@@ -3,8 +3,7 @@ import pytest
 
 from flaskr.app import create_app
 
-
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def test_client():
     os.environ['DEBUG_SQL'] = '1'
     flask_app = create_app()

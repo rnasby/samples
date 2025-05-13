@@ -12,5 +12,5 @@ class CarModelORM(db.Model):
     price = sa.Column("price", sa.Float(precision=2), unique=False, nullable=False)
     make_id = sa.Column("make_id", sa.Integer, sa.ForeignKey("car_make.id"), unique=False, nullable=False)
 
-    car_make = sa_orm.relationship("CarMakeORM", back_populates="models")
-    parts = sa_orm.relationship("CarPartORM", back_populates="models", secondary="car_model_part", lazy="dynamic")
+    make = sa_orm.relationship("CarMakeORM", back_populates="models")
+    parts = sa_orm.relationship("CarPartORM", back_populates="models", secondary="car_model_part")

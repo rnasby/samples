@@ -27,10 +27,11 @@ class CarPartEntry(CarPartChange):
 # ------------------------------ Combo schemas ---------------------------------------
 
 class CarMake(CarMakeEntry):
-    car_models = fields.List(fields.Nested("CarModel"), dump_only=True)
+    models = fields.List(fields.Nested("CarModel"), dump_only=True)
 
 class CarModel(CarModelEntry):
-    car_make = fields.Nested(CarMakeEntry(), dump_only=True)
+    make = fields.Nested(CarMakeEntry(), dump_only=True)
+    parts = fields.List(fields.Nested("CarPart"), dump_only=True)
 
 class CarPart(CarPartEntry):
-    car_model = fields.Nested(CarModelEntry(), dump_only=True)
+    models = fields.List(fields.Nested(CarModelEntry()), dump_only=True)
