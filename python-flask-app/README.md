@@ -1,7 +1,7 @@
 # Features:
 
-1. REST API with CRUD operations using Flask, SQLAlchemy ORM, Marshmallow for serialization, and Smorest for API 
-   documentation.
+1. REST API web application with CRUD operations. Featuring Flask, SQLAlchemy ORM, Marshmallow for serialization, 
+   and Smorest for API documentation in presented in swagger-ui.
 
 # Usage:
 
