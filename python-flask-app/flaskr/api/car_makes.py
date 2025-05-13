@@ -1,13 +1,12 @@
 from http import HTTPStatus
 from flask import request
 from flask.views import MethodView
+from marshmallow import Schema, fields
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from flaskr.db import db
 from flaskr.orm import CarMakeORM
-from flaskr.api.schemas import CarMake, CarMakeEntry, CarMakeChange
-
 
 blp = Blueprint("Car Makes", __name__, description="Operations on car makes")
 
@@ -18,6 +17,15 @@ def get_car_make(make_id):
         abort(HTTPStatus.NOT_FOUND, message="Make not found.")
 
     return make
+
+class CarMakeChange(Schema):
+    name = fields.Str(required=True)
+
+class CarMakeEntry(CarMakeChange):
+    id = fields.Int(dump_only=True)
+
+class CarMake(CarMakeEntry):
+    models = fields.List(fields.Nested("CarModel"), dump_only=True)
 
 @blp.route("/car-makes/<string:make_id>")
 class CarMakesWithId(MethodView):

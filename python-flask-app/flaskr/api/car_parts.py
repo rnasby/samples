@@ -1,12 +1,12 @@
 from http import HTTPStatus
 from flask import request
 from flask.views import MethodView
+from marshmallow import Schema, fields
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError
 
 from flaskr.db import db
 from flaskr.orm import CarPartORM
-from flaskr.api.schemas import CarPart, CarPartEntry, CarPartChange
 
 blp = Blueprint("Car Parts", __name__, description="Operations on car parts")
 
@@ -17,6 +17,17 @@ def get_car_part(part_id):
         abort(HTTPStatus.NOT_FOUND, message="Car part not found.")
 
     return part
+
+class CarPartChange(Schema):
+    name = fields.Str(required=True)
+    price = fields.Float(required=True)
+
+class CarPartEntry(CarPartChange):
+    id = fields.Int(dump_only=True)
+
+class CarPart(CarPartEntry):
+    models = fields.List(fields.Nested("CarModelEntry"), dump_only=True)
+
 
 @blp.route("/car-parts/<string:part_id>")
 class CarPartsWithId(MethodView):

@@ -2,13 +2,12 @@ from http import HTTPStatus
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError
+from flaskr.api.car_parts import CarPartEntry
 
 from flaskr.db import db
 from flaskr.api import car_models, car_parts
-from flaskr.api.schemas import CarPartEntry
 
 blp = Blueprint("Car Models Parts", __name__, description="Operations on car models parts")
-
 
 @blp.route("/car-models/<string:model_id>/parts")
 class CarModelPartsWithId(MethodView):
