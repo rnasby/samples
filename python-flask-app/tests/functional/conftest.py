@@ -1,13 +1,16 @@
-import os
 import pytest
-
-from flaskr.app import create_app
+import flaskr.app
 
 @pytest.fixture(scope='function')
 def test_client():
-    os.environ['DEBUG_SQL'] = '1'
-    flask_app = create_app()
+    overrides = {
+        'DB_SHOW_SQL': '1',
+        'DB_URL': 'sqlite://',
+        'AUTH_IMPL': 'flaskr.auth.BogusAuth'
+    }
 
-    with flask_app.test_client() as testing_client:
-        with flask_app.app_context():
-            yield testing_client
+    app = flaskr.app.create_app(overrides)
+
+    with app.test_client() as client:
+        with app.app_context():
+            yield client

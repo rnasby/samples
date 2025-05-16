@@ -1,9 +1,9 @@
-from flaskr.db import db
+from flaskr.db import DB
 import sqlalchemy as sa
 import sqlalchemy.orm as sa_orm
 
 
-class CarModelORM(db.Model):
+class CarModelORM(DB.Model):
     __tablename__ = "car_model"
 
     id = sa.Column("id", sa.Integer, primary_key=True)

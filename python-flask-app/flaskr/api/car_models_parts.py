@@ -4,23 +4,23 @@ from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError
 from flaskr.api.car_parts import CarPartEntry
 
-from flaskr.db import db
+from flaskr.db import DB
 from flaskr.api import car_models, car_parts
 
-blp = Blueprint("Car Models Parts", __name__, description="Operations on car models parts")
+BLP = Blueprint("Car Models Parts", __name__, description="Operations on car models parts")
 
-@blp.route("/car-models/<string:model_id>/parts")
+@BLP.route("/car-models/<string:model_id>/parts")
 class CarModelPartsWithId(MethodView):
-    @blp.response(HTTPStatus.OK, CarPartEntry(many=True))
+    @BLP.response(HTTPStatus.OK, CarPartEntry(many=True))
     def get(self, model_id):
         model = car_models.get_car_model(model_id)
         parts = model.parts
 
         return parts
 
-@blp.route("/car-models/<string:model_id>/parts/<string:part_id>")
+@BLP.route("/car-models/<string:model_id>/parts/<string:part_id>")
 class CarModelParts(MethodView):
-    @blp.response(HTTPStatus.CREATED, CarPartEntry)
+    @BLP.response(HTTPStatus.CREATED, CarPartEntry)
     def post(self, model_id, part_id):
         model = car_models.get_car_model(model_id)
         part = car_parts.get_car_part(part_id)
@@ -28,8 +28,8 @@ class CarModelParts(MethodView):
         model.parts.append(part)
 
         try:
-            db.session.add(model)
-            db.session.commit()
+            DB.session.add(model)
+            DB.session.commit()
         except SQLAlchemyError:
             abort(500, message="An error occurred while inserting the model part.")
 
@@ -41,8 +41,8 @@ class CarModelParts(MethodView):
         model.parts.remove(part)
 
         try:
-            db.session.add(model)
-            db.session.commit()
+            DB.session.add(model)
+            DB.session.commit()
         except SQLAlchemyError:
             abort(500, message="An error occurred while deleting the model part.")
 

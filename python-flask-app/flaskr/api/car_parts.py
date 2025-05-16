@@ -5,13 +5,13 @@ from marshmallow import Schema, fields
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError
 
-from flaskr.db import db
+from flaskr.db import DB
 from flaskr.orm import CarPartORM
 
-blp = Blueprint("Car Parts", __name__, description="Operations on car parts")
+BLP = Blueprint("Car Parts", __name__, description="Operations on car parts")
 
 def get_car_part(part_id):
-    part = db.session.get(CarPartORM, part_id)
+    part = DB.session.get(CarPartORM, part_id)
 
     if not part:
         abort(HTTPStatus.NOT_FOUND, message="Car part not found.")
@@ -29,43 +29,43 @@ class CarPart(CarPartEntry):
     models = fields.List(fields.Nested("CarModelEntry"), dump_only=True)
 
 
-@blp.route("/car-parts/<string:part_id>")
+@BLP.route("/car-parts/<string:part_id>")
 class CarPartsWithId(MethodView):
-    @blp.response(HTTPStatus.OK, CarPart)
+    @BLP.response(HTTPStatus.OK, CarPart)
     def get(self, part_id):
         return get_car_part(part_id)
 
     def delete(self, part_id):
         make = get_car_part(part_id)
-        db.session.delete(make)
-        db.session.commit()
+        DB.session.delete(make)
+        DB.session.commit()
         return {"message": "Car part deleted"}, HTTPStatus.NO_CONTENT
 
-    @blp.arguments(CarPartChange)
-    @blp.response(HTTPStatus.NO_CONTENT)
+    @BLP.arguments(CarPartChange)
+    @BLP.response(HTTPStatus.NO_CONTENT)
     def put(self, part_data, part_id):
         part = get_car_part(part_id)
         part.price = part_data["price"]
         part.name = part_data["name"]
 
-        db.session.add(part)
-        db.session.commit()
+        DB.session.add(part)
+        DB.session.commit()
 
 
-@blp.route("/car-parts")
+@BLP.route("/car-parts")
 class CarParts(MethodView):
-    @blp.response(HTTPStatus.OK, CarPartEntry(many=True))
+    @BLP.response(HTTPStatus.OK, CarPartEntry(many=True))
     def get(self):
-        return db.session.query(CarPartORM)
+        return DB.session.query(CarPartORM)
 
-    @blp.arguments(CarPartChange)
-    @blp.response(HTTPStatus.CREATED, CarPartEntry)
+    @BLP.arguments(CarPartChange)
+    @BLP.response(HTTPStatus.CREATED, CarPartEntry)
     def post(self, part_data):
         part = CarPartORM(**part_data)
 
         try:
-            db.session.add(part)
-            db.session.commit()
+            DB.session.add(part)
+            DB.session.commit()
         except SQLAlchemyError:
             abort(HTTPStatus.INTERNAL_SERVER_ERROR, message="An error occurred while inserting car part.")
 

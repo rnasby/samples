@@ -1,29 +1,25 @@
-import os
+import flask
+import flask_smorest
 
-from flask import Flask
-from flask_smorest import Api
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
+import flaskr.db
+import flaskr.jwt
+import flaskr.auth
+import flaskr.config
 
-from flaskr.db import db
+import flaskr.config
+import flaskr.api.login
+import flaskr.api.car_makes
+import flaskr.api.car_models
+import flaskr.api.car_parts
+import flaskr.api.car_models_parts
 
-import flaskr.orm
+CONFIG = flaskr.config.Config()
 
-from flaskr.api.car_makes import blp as car_makes_blp
-from flaskr.api.car_models import blp as car_models_blp
-from flaskr.api.car_parts import blp as car_parts_blp
-from flaskr.api.car_models_parts import blp as car_models_parts_blp
+def create_app(overrides = None):
+    app = flask.Flask(__name__)
 
-is_check_debug_sql = True
-DEFAULT_DB_URL = "sqlite://"
+    CONFIG.load(overrides)
 
-def create_app(db_url=None):
-    """
-    Will default to an in-memory database.
-    """
-    global is_check_debug_sql
-
-    app = Flask(__name__)
     app.config["API_TITLE"] = "Cars REST API"
     app.config["API_VERSION"] = "v1"
 
@@ -32,27 +28,20 @@ def create_app(db_url=None):
     app.config["OPENAPI_SWAGGER_UI_PATH"] = "/swagger-ui"
     app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
 
+    app.config["SQLALCHEMY_DATABASE_URI"] = CONFIG.db_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_DATABASE_URI"] = db_url or os.getenv("DATABASE_URL", DEFAULT_DB_URL)
 
     app.config["PROPAGATE_EXCEPTIONS"] = True
+    app.config["JWT_SECRET_KEY"] = CONFIG.secret_key
 
-    db.init_app(app)
-    api = Api(app)
+    flaskr.db.init(app, CONFIG.is_db_create, CONFIG.is_db_show_sql)
+    api = flask_smorest.Api(app)
+    flaskr.jwt.setup_jwt(app, CONFIG.jwt_tokens_blocked)
 
-    if is_check_debug_sql and os.getenv("DEBUG_SQL", "0") == "1" :
-        is_check_debug_sql = False
-        @event.listens_for(Engine, "before_cursor_execute")
-        def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-            print("SQL:", statement, parameters)
-
-    if app.config["SQLALCHEMY_DATABASE_URI"] == DEFAULT_DB_URL:
-        with app.app_context():
-            db.create_all()
-
-    api.register_blueprint(car_makes_blp)
-    api.register_blueprint(car_models_blp)
-    api.register_blueprint(car_parts_blp)
-    api.register_blueprint(car_models_parts_blp)
+    api.register_blueprint(flaskr.api.login.BLP)
+    api.register_blueprint(flaskr.api.car_makes.BLP)
+    api.register_blueprint(flaskr.api.car_models.BLP)
+    api.register_blueprint(flaskr.api.car_parts.BLP)
+    api.register_blueprint(flaskr.api.car_models_parts.BLP)
 
     return app

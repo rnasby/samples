@@ -1,8 +1,24 @@
 from http import HTTPStatus
 
+LOGIN_API = '/login'
+LOGOUT_API = '/logout'
+REFRESH_API = '/refresh'
+
 CAR_MAKES_API = '/car-makes'
 CAR_MODELS_API = '/car-models'
 CAR_PARTS_API = '/car-parts'
+
+def login(test_client, user_id, password):
+    return test_client.post(f'{LOGIN_API}', json={"user_id" : user_id, "password" : password})
+
+def login_with_success(test_client, user_id, password):
+    reply = login(test_client, user_id, password)
+    assert reply.status_code == HTTPStatus.OK
+    assert reply.json["access_token"] is not None
+    assert reply.json["refresh_token"] is not None
+    test_client.environ_base['HTTP_AUTHORIZATION'] = 'Bearer ' + reply.json["access_token"]
+
+    return reply
 
 def assert_ford_make(make):
     assert make["id"] == 1

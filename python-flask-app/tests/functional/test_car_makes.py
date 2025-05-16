@@ -4,7 +4,6 @@ from tests.functional import common
 
 API = common.CAR_MAKES_API
 
-
 def test_create_car_make(test_client):
     reply = common.add_car_make(test_client, "Ford")
     common.assert_ford_make(json.loads(reply.data.decode()))

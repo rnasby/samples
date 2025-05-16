@@ -5,13 +5,13 @@ from marshmallow import Schema, fields
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from flaskr.db import db
+from flaskr.db import DB
 from flaskr.orm import CarMakeORM
 
-blp = Blueprint("Car Makes", __name__, description="Operations on car makes")
+BLP = Blueprint("Car Makes", __name__, description="Operations on car makes")
 
 def get_car_make(make_id):
-    make = db.session.get(CarMakeORM, make_id)
+    make = DB.session.get(CarMakeORM, make_id)
 
     if not make:
         abort(HTTPStatus.NOT_FOUND, message="Make not found.")
@@ -27,40 +27,40 @@ class CarMakeEntry(CarMakeChange):
 class CarMake(CarMakeEntry):
     models = fields.List(fields.Nested("CarModel"), dump_only=True)
 
-@blp.route("/car-makes/<string:make_id>")
+@BLP.route("/car-makes/<string:make_id>")
 class CarMakesWithId(MethodView):
-    @blp.response(HTTPStatus.OK, CarMake)
+    @BLP.response(HTTPStatus.OK, CarMake)
     def get(self, make_id):
         return get_car_make(make_id)
 
     def delete(self, make_id):
         make = get_car_make(make_id)
-        db.session.delete(make)
-        db.session.commit()
+        DB.session.delete(make)
+        DB.session.commit()
         return {"message": "Make deleted"}, HTTPStatus.NO_CONTENT
 
-    @blp.arguments(CarMakeChange)
-    @blp.response(HTTPStatus.NO_CONTENT)
+    @BLP.arguments(CarMakeChange)
+    @BLP.response(HTTPStatus.NO_CONTENT)
     def put(self, make_data, make_id):
         make = get_car_make(make_id)
         make.name = make_data["name"]
 
-        db.session.add(make)
-        db.session.commit()
+        DB.session.add(make)
+        DB.session.commit()
 
-@blp.route("/car-makes")
+@BLP.route("/car-makes")
 class CarMakes(MethodView):
-    @blp.response(HTTPStatus.OK, CarMakeEntry(many=True))
+    @BLP.response(HTTPStatus.OK, CarMakeEntry(many=True))
     def get(self):
-        return db.session.query(CarMakeORM)
+        return DB.session.query(CarMakeORM)
 
-    @blp.arguments(CarMakeChange)
-    @blp.response(HTTPStatus.CREATED, CarMakeEntry)
+    @BLP.arguments(CarMakeChange)
+    @BLP.response(HTTPStatus.CREATED, CarMakeEntry)
     def post(self, make_data):
         make = CarMakeORM(**make_data)
         try:
-            db.session.add(make)
-            db.session.commit()
+            DB.session.add(make)
+            DB.session.commit()
         except IntegrityError:
             abort(HTTPStatus.BAD_REQUEST, message="A make with that name already exists.")
         except SQLAlchemyError:

@@ -1,7 +1,7 @@
 # Features:
 
 1. REST API web application with CRUD operations. Featuring Flask, SQLAlchemy ORM, Marshmallow for serialization, 
-   and Smorest for API documentation in presented in swagger-ui.
+   and Smorest for API documentation presented in swagger-ui.
 
 # Usage:
 
@@ -38,8 +38,4 @@ After cloning the project:
 - Swagger documentation is available at: http://localhost:5000/swagger-ui
 
 - Optional environment variables:
-  - DEBUG_SQL={0|1}
-      - Default: 0
-      - Will emit SQL to console if 1
-  - DATABASE_URL={SQLAlchemy connection string}
-      - Default: sqlite:///
+  - See flaskr.config.Config doc string.
