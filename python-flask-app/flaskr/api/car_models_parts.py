@@ -2,6 +2,7 @@ from http import HTTPStatus
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError
+from flask_jwt_extended import jwt_required
 from flaskr.api.car_parts import CarPartEntry
 
 from flaskr.db import DB
@@ -20,6 +21,7 @@ class CarModelPartsWithId(MethodView):
 
 @BLP.route("/car-models/<string:model_id>/parts/<string:part_id>")
 class CarModelParts(MethodView):
+    @jwt_required()
     @BLP.response(HTTPStatus.CREATED, CarPartEntry)
     def post(self, model_id, part_id):
         model = car_models.get_car_model(model_id)
@@ -35,6 +37,7 @@ class CarModelParts(MethodView):
 
         return part
 
+    @jwt_required()
     def delete(self, model_id, part_id):
         model = car_models.get_car_model(model_id)
         part = car_parts.get_car_part(part_id)

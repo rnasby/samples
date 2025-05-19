@@ -1,6 +1,8 @@
 import pytest
 import flaskr.app
 
+pytest.register_assert_rewrite("tests.functional")
+
 @pytest.fixture(scope='function')
 def test_client():
     overrides = {

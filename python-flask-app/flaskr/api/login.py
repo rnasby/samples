@@ -21,10 +21,15 @@ class UserLogin(MethodView):
         try:
             cfg = flaskr.app.CONFIG
             user = cfg.auth_impl.auth_user(user_id, password)
-        except Exception as e:
-            abort(401, message="Invalid credentials.")
+        except ValueError as e:
+            abort(401, message=str(e))
+        except NotImplementedError:
+            abort(401, message="Authentication method not implemented")
 
-        refresh_token = create_refresh_token(user_id)
+        # TODO: Add flask_jwt_extended.JWTManager.user_identity_loader to convert user to a string.
+        #  And pass that to create tokens.
+
+        refresh_token = create_refresh_token(identity=user_id)
         access_token = create_access_token(identity=user_id, fresh=True)
 
         return {"access_token": access_token, "refresh_token": refresh_token}, 200
@@ -33,7 +38,6 @@ class UserLogin(MethodView):
 class UserLogout(MethodView):
     @jwt_required()
     def post(self):
-        current_user = get_jwt_identity()
         jti = get_jwt()["jti"]
         flaskr.app.CONFIG.jwt_tokens_blocked.add(jti)
         return {"message": "Successfully logged out"}, 200

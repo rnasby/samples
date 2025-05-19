@@ -66,6 +66,7 @@ class Config:
         self.auth_impl = None
         self.secret_key = None
 
+        # TODO: Replace set with database for persisting blocked tokens between restarts.
         self.jwt_tokens_blocked = set()
 
     def load(self, overrides=None):

@@ -3,6 +3,7 @@ from flask import request
 from flask.views import MethodView
 from marshmallow import Schema, fields
 from flask_smorest import Blueprint, abort
+from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from flaskr.db import DB
@@ -33,12 +34,14 @@ class CarMakesWithId(MethodView):
     def get(self, make_id):
         return get_car_make(make_id)
 
+    @jwt_required()
     def delete(self, make_id):
         make = get_car_make(make_id)
         DB.session.delete(make)
         DB.session.commit()
         return {"message": "Make deleted"}, HTTPStatus.NO_CONTENT
 
+    @jwt_required()
     @BLP.arguments(CarMakeChange)
     @BLP.response(HTTPStatus.NO_CONTENT)
     def put(self, make_data, make_id):
@@ -50,10 +53,7 @@ class CarMakesWithId(MethodView):
 
 @BLP.route("/car-makes")
 class CarMakes(MethodView):
-    @BLP.response(HTTPStatus.OK, CarMakeEntry(many=True))
-    def get(self):
-        return DB.session.query(CarMakeORM)
-
+    @jwt_required()
     @BLP.arguments(CarMakeChange)
     @BLP.response(HTTPStatus.CREATED, CarMakeEntry)
     def post(self, make_data):
@@ -69,3 +69,7 @@ class CarMakes(MethodView):
         headers = {'location': request.base_url + "/" + str(make.id)}
 
         return make, headers
+
+    @BLP.response(HTTPStatus.OK, CarMakeEntry(many=True))
+    def get(self):
+        return DB.session.query(CarMakeORM)

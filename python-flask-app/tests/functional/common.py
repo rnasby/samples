@@ -11,14 +11,34 @@ CAR_PARTS_API = '/car-parts'
 def login(test_client, user_id, password):
     return test_client.post(f'{LOGIN_API}', json={"user_id" : user_id, "password" : password})
 
-def login_with_success(test_client, user_id, password):
-    reply = login(test_client, user_id, password)
+def validate_token_request(test_client, reply):
     assert reply.status_code == HTTPStatus.OK
     assert reply.json["access_token"] is not None
-    assert reply.json["refresh_token"] is not None
+
     test_client.environ_base['HTTP_AUTHORIZATION'] = 'Bearer ' + reply.json["access_token"]
 
     return reply
+
+def login_ok(test_client, user_id, password):
+    reply = login(test_client, user_id, password)
+    assert reply.json["refresh_token"] is not None
+    return validate_token_request(test_client, reply)
+
+def login_fred(test_client):
+    return login_ok(test_client, "fred", "pebbles")
+
+def logout(test_client):
+    reply = test_client.post(f'{LOGOUT_API}')
+    assert reply.status_code == HTTPStatus.OK
+
+    return reply
+
+def refresh_token(test_client, refresh_token_str):
+    return test_client.post(f'{REFRESH_API}', headers={"Authorization": f"Bearer {refresh_token_str}"})
+
+def refresh_token_ok(test_client, refresh_token_str):
+    reply = refresh_token(test_client, refresh_token_str)
+    return validate_token_request(test_client, reply)
 
 def assert_ford_make(make):
     assert make["id"] == 1
@@ -78,7 +98,9 @@ def add_car_model_parts(test_client):
     add_car_model_part(test_client, 2, 1)
     add_car_model_part(test_client, 2, 2)
 
-def add_all(test_client):
+def setup(test_client):
+    login_fred(test_client)
+
     add_car_makes(test_client)
     add_car_models(test_client)
     add_car_parts(test_client)

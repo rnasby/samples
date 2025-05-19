@@ -45,7 +45,7 @@ class BogusAuth(AbstractAuth):
         users = [u for u in self.users if u["id"] == user_id]
 
         if not len(users) == 1:
-            raise ValueError("Invalid user")
+            raise ValueError("Invalid user id")
 
         user = users[0]
         if not user["password"] == password:

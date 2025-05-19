@@ -3,6 +3,7 @@ from flask import request
 from flask.views import MethodView
 from marshmallow import Schema, fields
 from flask_smorest import Blueprint, abort
+from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import SQLAlchemyError
 
 from flaskr.db import DB
@@ -35,12 +36,14 @@ class CarPartsWithId(MethodView):
     def get(self, part_id):
         return get_car_part(part_id)
 
+    @jwt_required()
     def delete(self, part_id):
         make = get_car_part(part_id)
         DB.session.delete(make)
         DB.session.commit()
         return {"message": "Car part deleted"}, HTTPStatus.NO_CONTENT
 
+    @jwt_required()
     @BLP.arguments(CarPartChange)
     @BLP.response(HTTPStatus.NO_CONTENT)
     def put(self, part_data, part_id):
@@ -58,6 +61,7 @@ class CarParts(MethodView):
     def get(self):
         return DB.session.query(CarPartORM)
 
+    @jwt_required()
     @BLP.arguments(CarPartChange)
     @BLP.response(HTTPStatus.CREATED, CarPartEntry)
     def post(self, part_data):
