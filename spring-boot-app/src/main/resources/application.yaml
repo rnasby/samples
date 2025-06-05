@@ -1,0 +1,16 @@
+logging.level.root: INFO
+
+spring:
+  application:
+    name: car-parts-store
+  jpa:
+    hibernate:
+      ddl-auto: none
+      # Don't need to Hibernate to populate the database, Spring did it already
+
+custom:
+  security:
+    jwt:
+      secret-key: "${JWT_SECRET}"
+      token-timeout-min: 60
+      refresh-token-timeout-min: 86400 # 24 hours
