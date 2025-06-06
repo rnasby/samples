@@ -1,7 +1,7 @@
 package carPartsStore.controllers;
 
-import carPartsStore.Constants;
-import carPartsStore.data.CarMake;
+import carPartsStore.db.CarMake;
+import carPartsStore.dto.CarMakeDTO;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +42,7 @@ class CarMakesControllerTest {
 
     @Test
     void listValues() {
-        var reply = restTemplate.getForEntity(Constants.CAR_MAKES_PATH, CarMake[].class);
+        var reply = restTemplate.getForEntity(CarModelsController.ROOT, CarMake[].class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(reply.getBody()).isNotNull();
         CarMake[] makes = reply.getBody();
@@ -57,7 +57,7 @@ class CarMakesControllerTest {
         var location = voidReply.getHeaders().get("location");
         assertThat(location).isNotNull();
 
-        var carMakeReply = restTemplate.getForEntity(location.getFirst(), CarMake.class);
+        var carMakeReply = restTemplate.getForEntity(location.getFirst(), CarMakeDTO.class);
         assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(carMakeReply.hasBody()).isTrue();
         var carMake = carMakeReply.getBody();
@@ -86,11 +86,11 @@ class CarMakesControllerTest {
         common.setup();
         common.logout();
 
-        var reply = restTemplate.getForEntity(Constants.CAR_MAKES_PATH, String.class);
+        var reply = restTemplate.getForEntity(CarModelsController.ROOT, String.class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         var json = JsonPath.parse(reply.getBody());
-        List<CarMake> makes = json.read("$");
-        common.assertFordMake(makes.getFirst());
+        List<CarMakeDTO> makes = json.read("$");
+        common.assertFordMake(makes.get(0));
 
         var make = makes.get(1);
         assertThat(make.getId()).isEqualTo(2);

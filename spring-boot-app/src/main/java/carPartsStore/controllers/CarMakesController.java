@@ -1,8 +1,9 @@
 package carPartsStore.controllers;
 
-import carPartsStore.Constants;
-import carPartsStore.data.CarMake;
-import carPartsStore.data.CarMakeRepository;
+import carPartsStore.db.CarMake;
+import carPartsStore.db.CarMakeRepository;
+import carPartsStore.dto.CarMakeDTO;
+import carPartsStore.dto.CarModelDTO;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -13,8 +14,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 
 @RestController
-@RequestMapping(Constants.CAR_MAKES_PATH)
-class CarMakesController {
+@RequestMapping(CarMakesController.ROOT)
+public class CarMakesController {
+    static public final String NAME = "car-makes";
+    static public final String ROOT = "/" + NAME;
+
     private final CarMakeRepository repository;
 
     private CarMakesController(CarMakeRepository repository) {
@@ -44,7 +48,7 @@ class CarMakesController {
     private ResponseEntity<Void> create(@RequestBody CarMakeDTO request, UriComponentsBuilder ucb) {
         var entity = new CarMake(request.getName());
         entity = repository.save(entity);
-        URI location = ucb.path("car-makes/{id}").buildAndExpand(entity.getId()).toUri();
+        URI location = ucb.path(NAME + "/{id}").buildAndExpand(entity.getId()).toUri();
 
         return ResponseEntity.created(location).build();
     }

@@ -1,4 +1,4 @@
-package carPartsStore.data;
+package carPartsStore.db;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

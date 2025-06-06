@@ -1,6 +1,6 @@
-package carPartsStore.data;
+package carPartsStore.db;
 
-import carPartsStore.controllers.CarPartDTO;
+import carPartsStore.dto.CarPartDTO;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

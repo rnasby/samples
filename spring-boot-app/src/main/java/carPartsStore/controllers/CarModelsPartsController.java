@@ -1,17 +1,19 @@
 package carPartsStore.controllers;
 
-import carPartsStore.data.*;
+import carPartsStore.db.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Set;
 
 @RestController
-@RequestMapping("/car-models/{modelId}/parts")
-class CarModelsPartsController {
+@RequestMapping(CarModelsPartsController.ROOT)
+public class CarModelsPartsController {
+    static public final String NAME = CarModelsController.NAME + "/{modelId}/parts";
+    static public final String ROOT = "/" + NAME;
+
     private final CarPartRepository partRepository;
     private final CarModelRepository modelRepository;
 
@@ -38,7 +40,7 @@ class CarModelsPartsController {
 
         model.getCarParts().add(part);
         modelRepository.save(model);
-        URI location = ucb.path("car-models/{modelId}/parts/{partId}").buildAndExpand(modelId, partId).toUri();
+        URI location = ucb.path(NAME + "/{partId}").buildAndExpand(modelId, partId).toUri();
 
         return ResponseEntity.created(location).build();
     }

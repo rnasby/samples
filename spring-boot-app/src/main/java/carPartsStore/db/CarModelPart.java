@@ -1,4 +1,4 @@
-package carPartsStore.data;
+package carPartsStore.db;
 
 import jakarta.persistence.*;
 import lombok.Getter;

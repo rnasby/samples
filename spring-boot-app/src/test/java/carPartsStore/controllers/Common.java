@@ -1,8 +1,6 @@
 package carPartsStore.controllers;
 
-import carPartsStore.Constants;
-import carPartsStore.authorization.AuthController;
-
+import carPartsStore.dto.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,12 +21,12 @@ public class Common {
         this.restTemplate = restTemplate;
     }
 
-    public ResponseEntity<AuthController.TokenDTO> login(String username, String password) {
-        AuthController.LoginDTO loginData = new AuthController.LoginDTO(username, password);
-        return restTemplate.postForEntity(LOGIN_API, loginData, AuthController.TokenDTO.class);
+    public ResponseEntity<TokenDTO> login(String username, String password) {
+        LoginDTO loginData = new LoginDTO(username, password);
+        return restTemplate.postForEntity(LOGIN_API, loginData, TokenDTO.class);
     }
 
-    public String validateTokenRequest(ResponseEntity<AuthController.TokenDTO> reply) {
+    public String validateTokenRequest(ResponseEntity<TokenDTO> reply) {
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(reply.hasBody()).isTrue();
 
@@ -36,7 +34,7 @@ public class Common {
         assertThat(headers).isNotNull();
         assertThat(headers.getFirst()).isEqualTo(MediaType.APPLICATION_JSON_VALUE);
 
-        AuthController.TokenDTO token = reply.getBody();
+        TokenDTO token = reply.getBody();
         String tokenStr = (token == null ? null : token.accessToken());
         assertThat(tokenStr).isNotNull();
 
@@ -55,9 +53,8 @@ public class Common {
         return restTemplate.postForEntity(LOGOUT_API, null, Void.class);
     }
 
-    public ResponseEntity<AuthController.TokenDTO> refreshToken(String refreshTokenStr) {
-        return restTemplate.postForEntity(REFRESH_API,
-                new AuthController.TokenDTO(refreshTokenStr), AuthController.TokenDTO.class);
+    public ResponseEntity<TokenDTO> refreshToken(String refreshTokenStr) {
+        return restTemplate.postForEntity(REFRESH_API, new TokenDTO(refreshTokenStr), TokenDTO.class);
     }
 
     public String refreshTokenOk(String refreshToken) {
@@ -84,13 +81,13 @@ public class Common {
     }
 
     public ResponseEntity<CarMakeDTO> getCarMake(Long id) {
-        String url = Constants.CAR_MAKES_PATH + "/" + id;
+        String url = CarMakesController.ROOT + "/" + id;
         return restTemplate.getForEntity(url, CarMakeDTO.class);
     }
 
     public ResponseEntity<Void> addCarMake(String name) {
         var vo = CarMakeDTO.builder().name(name).build();
-        var reply = restTemplate.postForEntity(Constants.CAR_MAKES_PATH, vo, Void.class);
+        var reply = restTemplate.postForEntity(CarMakesController.NAME, vo, Void.class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -102,12 +99,12 @@ public class Common {
     }
 
     public ResponseEntity<CarModelDTO> getCarModel(Long id) {
-        String url = Constants.CAR_MODELS_PATH + "/" + id;
+        String url = CarMakesController.ROOT + "/" + id;
         return restTemplate.getForEntity(url, CarModelDTO.class);
     }
 
     public ResponseEntity<Void> addCarModel(String name, Long makeId, Integer year, Double price) {
-        String url = Constants.CAR_MAKES_PATH + "/" + makeId + "/car-models";
+        String url = CarMakesController.ROOT + "/" + makeId + "/car-models";
         var vo = CarModelDTO.builder().name(name).carMakeId(makeId).year(year).price(price).build();
         var reply = restTemplate.postForEntity(url, vo, Void.class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -121,13 +118,13 @@ public class Common {
     }
 
     public ResponseEntity<CarPartDTO> getCarPart(Long id) {
-        String url = Constants.CAR_PARTS_PATH + "/" + id;
+        String url = CarPartsController.NAME + "/" + id;
         return restTemplate.getForEntity(url, CarPartDTO.class);
     }
 
     public ResponseEntity<Void> addCarPart(String name, Double price) {
         var vo = CarPartDTO.builder().name(name).price(price).build();
-        var reply = restTemplate.postForEntity(Constants.CAR_PARTS_PATH, vo, Void.class);
+        var reply = restTemplate.postForEntity(CarPartsController.NAME, vo, Void.class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -139,7 +136,8 @@ public class Common {
     }
 
     public ResponseEntity<Void> addCarModelPart(Long model_id, Long part_id) {
-        String url = Constants.CAR_MODELS_PATH + "/" + model_id + "/car-parts" + "/" + part_id;
+        String url = CarModelsPartsController.NAME.replace("{modelId}", model_id.toString()).replace("{partId}",
+                part_id.toString());
         var reply = restTemplate.postForEntity(url, null, Void.class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 

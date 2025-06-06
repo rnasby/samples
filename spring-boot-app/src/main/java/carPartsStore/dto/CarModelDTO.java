@@ -1,6 +1,6 @@
-package carPartsStore.controllers;
+package carPartsStore.dto;
 
-import carPartsStore.data.CarModel;
+import carPartsStore.db.CarModel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

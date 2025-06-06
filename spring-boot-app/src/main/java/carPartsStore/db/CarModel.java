@@ -1,6 +1,6 @@
-package carPartsStore.data;
+package carPartsStore.db;
 
-import carPartsStore.controllers.CarModelDTO;
+import carPartsStore.dto.CarModelDTO;
 import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import lombok.Getter;

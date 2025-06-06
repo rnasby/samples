@@ -1,6 +1,7 @@
 package carPartsStore.authorization;
 
-import carPartsStore.Constants;
+import carPartsStore.dto.LoginDTO;
+import carPartsStore.dto.TokenDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -11,8 +12,11 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(Constants.AUTH_PATH)
+@RequestMapping(AuthController.ROOT)
 public class AuthController {
+    static public final String NAME = "auth";
+    static public final String ROOT = "/" + NAME;
+
     static private final String BEARER_PREFIX = "Bearer ";
 
     private final TokenService tokenService;
@@ -59,11 +63,5 @@ public class AuthController {
 
         tokenService.blockToken(token);
         logger.info("Successfully logged out: {}", user);
-    }
-
-    public record TokenDTO(String accessToken) {
-    }
-
-    public record LoginDTO(String login, String password) {
     }
 }
