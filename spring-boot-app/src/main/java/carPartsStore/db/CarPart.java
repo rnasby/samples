@@ -14,6 +14,7 @@ import java.util.List;
 @Table(name = "T_CAR_PART")
 public class CarPart {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private double price;

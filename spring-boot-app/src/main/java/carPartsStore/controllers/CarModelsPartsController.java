@@ -1,6 +1,7 @@
 package carPartsStore.controllers;
 
 import carPartsStore.db.*;
+import carPartsStore.dto.CarPartDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -23,11 +24,11 @@ public class CarModelsPartsController {
     }
 
     @GetMapping
-    private ResponseEntity<List<CarPart>> findAll(@PathVariable Long modelId) {
+    private ResponseEntity<List<CarPartDTO>> findAll(@PathVariable Long modelId) {
         var model = modelRepository.findById(modelId).orElse(null);
         if (model == null) return ResponseEntity.notFound().build();
 
-        return ResponseEntity.ok(model.getCarParts());
+        return ResponseEntity.ok(model.getCarParts().stream().map(CarPartDTO::new).toList());
     }
 
     @PostMapping("/{partId}")

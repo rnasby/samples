@@ -37,5 +37,6 @@ public class CarModelDTO {
         this.year = carModel.getYear();
         this.name = carModel.getName();
         this.price = carModel.getPrice();
+        this.carMakeId = carModel.getCarMake() != null ? carModel.getCarMake().getId() : null;
     }
 }

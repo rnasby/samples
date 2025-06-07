@@ -46,8 +46,7 @@ public class CarMakesController {
 
     @PostMapping
     private ResponseEntity<Void> create(@RequestBody CarMakeDTO request, UriComponentsBuilder ucb) {
-        var entity = new CarMake(request.getName());
-        entity = repository.save(entity);
+        var entity = repository.save(new CarMake(request.getName()));
         URI location = ucb.path(NAME + "/{id}").buildAndExpand(entity.getId()).toUri();
 
         return ResponseEntity.created(location).build();

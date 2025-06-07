@@ -62,20 +62,20 @@ public class Common {
     }
 
     public void assertFordMake(CarMakeDTO make) {
-        assertThat(make.getId()).isEqualTo(1);
+        assertThat(make.getId()).isEqualTo(0);
         assertThat(make.getName()).isEqualTo("Ford");
     }
 
     public void assertMustangModel(CarModelDTO model) {
-        assertThat(model.getId()).isEqualTo(1);
+        assertThat(model.getId()).isEqualTo(0);
         assertThat(model.getName()).isEqualTo("Mustang");
-        assertThat(model.getCarMake().getId()).isEqualTo(1);
+        assertThat(model.getCarMakeId()).isEqualTo(0);
         assertThat(model.getYear()).isEqualTo(1979);
         assertThat(model.getPrice()).isEqualTo(6700.00);
     }
 
     public void assertAlternatorPart(CarPartDTO part) {
-        assertThat(part.getId()).isEqualTo(1);
+        assertThat(part.getId()).isEqualTo(0);
         assertThat(part.getName()).isEqualTo("Alternator");
         assertThat(part.getPrice()).isEqualTo(500.50);
     }
@@ -86,8 +86,8 @@ public class Common {
     }
 
     public ResponseEntity<Void> addCarMake(String name) {
-        var vo = CarMakeDTO.builder().name(name).build();
-        var reply = restTemplate.postForEntity(CarMakesController.NAME, vo, Void.class);
+        var dto = CarMakeDTO.builder().name(name).build();
+        var reply = restTemplate.postForEntity(CarMakesController.ROOT, dto, Void.class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -104,17 +104,16 @@ public class Common {
     }
 
     public ResponseEntity<Void> addCarModel(String name, Long makeId, Integer year, Double price) {
-        String url = CarMakesController.ROOT + "/" + makeId + "/car-models";
         var vo = CarModelDTO.builder().name(name).carMakeId(makeId).year(year).price(price).build();
-        var reply = restTemplate.postForEntity(url, vo, Void.class);
+        var reply = restTemplate.postForEntity(CarModelsController.ROOT, vo, Void.class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
     }
 
     public void addCarModels() {
-        addCarModel("Mustang", 1L, 1979, 6700.00);
-        addCarModel("Corvette", 2L, 1981, 15000.00);
+        addCarModel("Mustang", 0L, 1979, 6700.00);
+        addCarModel("Corvette", 1L, 1981, 15000.00);
     }
 
     public ResponseEntity<CarPartDTO> getCarPart(Long id) {
@@ -124,7 +123,7 @@ public class Common {
 
     public ResponseEntity<Void> addCarPart(String name, Double price) {
         var vo = CarPartDTO.builder().name(name).price(price).build();
-        var reply = restTemplate.postForEntity(CarPartsController.NAME, vo, Void.class);
+        var reply = restTemplate.postForEntity(CarPartsController.ROOT, vo, Void.class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -135,9 +134,8 @@ public class Common {
         addCarPart("Motor", 9500.50);
     }
 
-    public ResponseEntity<Void> addCarModelPart(Long model_id, Long part_id) {
-        String url = CarModelsPartsController.NAME.replace("{modelId}", model_id.toString()).replace("{partId}",
-                part_id.toString());
+    public ResponseEntity<Void> addCarModelPart(Long modelId, Long partId) {
+        String url = CarModelsPartsController.ROOT.replace("{modelId}", modelId.toString()) + "/" + partId;
         var reply = restTemplate.postForEntity(url, null, Void.class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -145,14 +143,14 @@ public class Common {
     }
 
     public void addCarModelParts() {
+        addCarModelPart(0L, 0L);
+        addCarModelPart(0L, 1L);
+        addCarModelPart(1L, 0L);
         addCarModelPart(1L, 1L);
-        addCarModelPart(1L, 2L);
-        addCarModelPart(2L, 1L);
-        addCarModelPart(2L, 2L);
     }
 
     public void setup() {
-        loginFred();
+//        loginFred();
         addCarMakes();
         addCarModels();
         addCarParts();

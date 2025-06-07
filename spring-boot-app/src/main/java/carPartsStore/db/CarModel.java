@@ -15,6 +15,7 @@ import java.util.List;
 @Table(name = "T_CAR_MODEL")
 public class CarModel {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

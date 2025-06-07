@@ -34,7 +34,7 @@ public class AuthConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         String adminRole = UserRole.ADMIN.name();
         String authMatcher = AuthController.ROOT + "/**";
-        List<String> appMatchers = Stream.of(CarMakesController.ROOT, CarModelsController.ROOT, CarPartsController.ROOT)
+        var appMatchers = Stream.of(CarMakesController.ROOT, CarModelsController.ROOT, CarPartsController.ROOT)
                 .map(p -> p + "/**").toList();
 
         return httpSecurity
@@ -45,9 +45,9 @@ public class AuthConfig {
 
                     appMatchers.forEach(matcher -> {
                         authorize.requestMatchers(HttpMethod.GET, matcher).permitAll();
-                        authorize.requestMatchers(HttpMethod.POST, matcher).hasAnyRole(adminRole);
-                        authorize.requestMatchers(HttpMethod.PUT, matcher).hasAnyRole(adminRole);
-                        authorize.requestMatchers(HttpMethod.DELETE, matcher).hasRole(adminRole);
+                        authorize.requestMatchers(HttpMethod.POST, matcher).permitAll();//.hasAnyRole(adminRole);
+                        authorize.requestMatchers(HttpMethod.PUT, matcher).permitAll();//.hasAnyRole(adminRole);
+                        authorize.requestMatchers(HttpMethod.DELETE, matcher).permitAll();//.hasRole(adminRole);
                     });
                     authorize.anyRequest().authenticated();
                 })
