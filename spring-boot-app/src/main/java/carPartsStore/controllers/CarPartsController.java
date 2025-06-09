@@ -40,7 +40,7 @@ public class CarPartsController {
     @GetMapping
     private ResponseEntity<List<CarPartDTO>> findAll(Pageable pageable) {
         var page = repository.findAll(PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
-                pageable.getSortOr(Sort.by(Sort.Direction.DESC, "name"))));
+                pageable.getSortOr(Sort.by(Sort.Direction.ASC, "id"))));
 
         return ResponseEntity.ok(page.getContent().stream().map(CarPartDTO::new).toList());
     }

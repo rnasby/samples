@@ -29,9 +29,9 @@ public class CarModel {
     )
     private List<CarPart> carParts = new ArrayList<>();
 
-    private int year;
+    private Integer year;
     private String name;
-    private double price;
+    private Double price;
 
     public CarModel() {
     }

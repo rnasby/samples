@@ -45,7 +45,7 @@ public class CarModelsController {
     @GetMapping
     private ResponseEntity<List<CarModelDTO>> findAll(Pageable pageable) {
         var page = modelRepository.findAll(PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
-                pageable.getSortOr(Sort.by(Sort.Direction.DESC, "name"))));
+                pageable.getSortOr(Sort.by(Sort.Direction.ASC, "id"))));
 
         return ResponseEntity.ok(page.getContent().stream().map(CarModelDTO::new).toList());
     }

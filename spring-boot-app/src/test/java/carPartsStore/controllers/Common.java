@@ -62,20 +62,20 @@ public class Common {
     }
 
     public void assertFordMake(CarMakeDTO make) {
-        assertThat(make.getId()).isEqualTo(0);
+        assertThat(make.getId()).isEqualTo(1L);
         assertThat(make.getName()).isEqualTo("Ford");
     }
 
     public void assertMustangModel(CarModelDTO model) {
-        assertThat(model.getId()).isEqualTo(0);
+        assertThat(model.getId()).isEqualTo(1L);
         assertThat(model.getName()).isEqualTo("Mustang");
-        assertThat(model.getCarMakeId()).isEqualTo(0);
+        assertThat(model.getCarMakeId()).isEqualTo(1L);
         assertThat(model.getYear()).isEqualTo(1979);
         assertThat(model.getPrice()).isEqualTo(6700.00);
     }
 
     public void assertAlternatorPart(CarPartDTO part) {
-        assertThat(part.getId()).isEqualTo(0);
+        assertThat(part.getId()).isEqualTo(1L);
         assertThat(part.getName()).isEqualTo("Alternator");
         assertThat(part.getPrice()).isEqualTo(500.50);
     }
@@ -99,7 +99,7 @@ public class Common {
     }
 
     public ResponseEntity<CarModelDTO> getCarModel(Long id) {
-        String url = CarMakesController.ROOT + "/" + id;
+        String url = CarModelsController.ROOT + "/" + id;
         return restTemplate.getForEntity(url, CarModelDTO.class);
     }
 
@@ -112,12 +112,12 @@ public class Common {
     }
 
     public void addCarModels() {
-        addCarModel("Mustang", 0L, 1979, 6700.00);
-        addCarModel("Corvette", 1L, 1981, 15000.00);
+        addCarModel("Mustang", 1L, 1979, 6700.00);
+        addCarModel("Corvette", 2L, 1981, 15000.00);
     }
 
     public ResponseEntity<CarPartDTO> getCarPart(Long id) {
-        String url = CarPartsController.NAME + "/" + id;
+        String url = CarPartsController.ROOT + "/" + id;
         return restTemplate.getForEntity(url, CarPartDTO.class);
     }
 
@@ -143,10 +143,10 @@ public class Common {
     }
 
     public void addCarModelParts() {
-        addCarModelPart(0L, 0L);
-        addCarModelPart(0L, 1L);
-        addCarModelPart(1L, 0L);
         addCarModelPart(1L, 1L);
+        addCarModelPart(1L, 2L);
+        addCarModelPart(2L, 1L);
+        addCarModelPart(2L, 2L);
     }
 
     public void setup() {

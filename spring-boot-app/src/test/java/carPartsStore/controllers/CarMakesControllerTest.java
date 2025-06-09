@@ -30,11 +30,15 @@ class CarMakesControllerTest {
     void testCreateCarMake() {
 //        common.loginFred();
         var voidReply = common.addCarMake("Ford");
+        assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         var location = voidReply.getHeaders().get("location");
         assertThat(location).isNotNull();
 
         var carMakeReply = restTemplate.getForEntity(location.getFirst(), CarMakeDTO.class);
         assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.OK);
+        var carMake = carMakeReply.getBody();
+        assertThat(carMake).isNotNull();
+        common.assertFordMake(carMake);
     }
 
     @Test
@@ -43,17 +47,17 @@ class CarMakesControllerTest {
         common.setup();
 //        common.logout();
 
-        var carMakeReply = common.getCarMake(0L);
+        var carMakeReply = common.getCarMake(1L);
 
         assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(carMakeReply.hasBody()).isTrue();
+
         var carMake = carMakeReply.getBody();
         assertThat(carMake).isNotNull();
-        var make = carMakeReply.getBody();
-        common.assertFordMake(make);
+        common.assertFordMake(carMake);
 
-        assertThat(make.getCarModels().size()).isEqualTo(1);
-        common.assertMustangModel(make.getCarModels().getFirst());
+        assertThat(carMake.getCarModels().size()).isEqualTo(1);
+        common.assertMustangModel(carMake.getCarModels().getFirst());
     }
 
     @Test
@@ -68,53 +72,52 @@ class CarMakesControllerTest {
 
         common.assertFordMake(makes[0]);
 
-        var make = makes[1];
-        assertThat(make.getId()).isEqualTo(1L);
-        assertThat(make.getName()).isEqualTo("Chevy");
-        assertThat(make.getCarModels()).isNull();
+        assertThat(makes[1].getId()).isEqualTo(2L);
+        assertThat(makes[1].getName()).isEqualTo("Chevy");
+        assertThat(makes[1].getCarModels()).isNull();
     }
 
     @Test
     @DirtiesContext
     void testUpdateCarMake() {
         common.setup();
-        var make = CarMakeDTO.builder().name("Bogus2").build();
-        var request = new HttpEntity<>(make);
+        var dto = CarMakeDTO.builder().name("Bogus2").build();
+        var request = new HttpEntity<>(dto);
 
-        var reply = restTemplate.exchange(CarMakesController.ROOT + "/0", HttpMethod.PUT, request, Void.class);
-        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        var carMakeReply = restTemplate.exchange(CarMakesController.ROOT + "/1", HttpMethod.PUT, request, Void.class);
+        assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        make = common.getCarMake(0L).getBody();
-        assertThat(make).isNotNull();
-        assertThat(make.getId()).isEqualTo(0L);
-        assertThat(make.getName()).isEqualTo("Bogus2");
+        dto = common.getCarMake(1L).getBody();
+        assertThat(dto).isNotNull();
+        assertThat(dto.getId()).isEqualTo(1L);
+        assertThat(dto.getName()).isEqualTo("Bogus2");
     }
 
     @Test
     @DirtiesContext
     void testDeleteCarMake() {
         common.setup();
-        var voidReply = restTemplate.exchange(CarMakesController.ROOT + "/0", HttpMethod.DELETE, null, Void.class);
+        var voidReply = restTemplate.exchange(CarMakesController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        var carGetCarMakeReply = common.getCarMake(0L);
-        assertThat(carGetCarMakeReply.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        var carMakeReply = common.getCarMake(1L);
+        assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     @DirtiesContext
     void testDeleteCarMakeDeletesChildren() {
         common.setup();
-        var modelEntity = common.getCarModel(0L);
-        assertThat(modelEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+        var modelReply = common.getCarModel(1L);
+        assertThat(modelReply.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        var voidReply = restTemplate.exchange(CarMakesController.ROOT + "/0", HttpMethod.DELETE, null, Void.class);
+        var voidReply = restTemplate.exchange(CarMakesController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        var makeEntity = common.getCarMake(0L);
-        assertThat(makeEntity.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        var carMakeReply = common.getCarMake(1L);
+        assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
-        modelEntity = common.getCarModel(0L);
-        assertThat(modelEntity.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        modelReply = common.getCarModel(1L);
+        assertThat(modelReply.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }

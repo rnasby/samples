@@ -17,7 +17,7 @@ public class CarPart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private double price;
+    private Double price;
     private String name, description;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)

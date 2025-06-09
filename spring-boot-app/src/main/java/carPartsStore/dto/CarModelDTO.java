@@ -14,9 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 public class CarModelDTO {
     private Long id;
-    private int year;
+    private Integer year;
     private String name;
-    private double price;
+    private Double price;
 
     @JsonProperty("car-make-id")
     private Long carMakeId;
