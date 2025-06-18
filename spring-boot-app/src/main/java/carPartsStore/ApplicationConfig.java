@@ -1,6 +1,6 @@
 package carPartsStore;
 
-import carPartsStore.authorization.AuthConfig;
+import carPartsStore.auth.AuthConfig;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 

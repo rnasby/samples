@@ -1,5 +1,7 @@
 package carPartsStore.controllers;
 
+import carPartsStore.auth.AuthDTO;
+import carPartsStore.auth.AuthController;
 import carPartsStore.dto.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -11,22 +13,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Component
 public class Common {
-    static final String LOGIN_API = "/auth/login";
-    static final String LOGOUT_API = "/auth/logout";
-    static final String REFRESH_API = "/auth/refresh";
-
     final TestRestTemplate restTemplate;
 
     Common(TestRestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    public ResponseEntity<TokenDTO> login(String username, String password) {
-        LoginDTO loginData = new LoginDTO(username, password);
-        return restTemplate.postForEntity(LOGIN_API, loginData, TokenDTO.class);
+    public ResponseEntity<String> login(String username, String password) {
+//        LoginDTO loginDTO = new LoginDTO(username, password);
+        AuthDTO request = new AuthDTO(username, password);
+
+        return restTemplate.postForEntity(AuthController.GENERATE_TOKEN, request, String.class);
     }
 
-    public String validateTokenRequest(ResponseEntity<TokenDTO> reply) {
+    public String validateTokenRequest(ResponseEntity<String> reply) {
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(reply.hasBody()).isTrue();
 
@@ -34,27 +34,28 @@ public class Common {
         assertThat(headers).isNotNull();
         assertThat(headers.getFirst()).isEqualTo(MediaType.APPLICATION_JSON_VALUE);
 
-        TokenDTO token = reply.getBody();
-        String tokenStr = (token == null ? null : token.accessToken());
-        assertThat(tokenStr).isNotNull();
+//        TokenDTO token = reply.getBody();
+//        String tokenStr = (token == null ? null : token.accessToken());
+//        assertThat(tokenStr).isNotNull();
 
-        return tokenStr;
+        return reply.getBody();
     }
 
     public String loginOk(String username, String password) {
-        return validateTokenRequest(login(username, password));
+        ResponseEntity<String> reply = login(username, password);
+        return validateTokenRequest(reply);
     }
 
     public String loginFred() {
         return loginOk("fred", "pebbles");
     }
 
-    public ResponseEntity<Void> logout() {
-        return restTemplate.postForEntity(LOGOUT_API, null, Void.class);
+    public ResponseEntity<String> logout() {
+        return restTemplate.postForEntity(AuthController.LOGOUT, null, String.class);
     }
 
-    public ResponseEntity<TokenDTO> refreshToken(String refreshTokenStr) {
-        return restTemplate.postForEntity(REFRESH_API, new TokenDTO(refreshTokenStr), TokenDTO.class);
+    public ResponseEntity<String> refreshToken(String refreshTokenStr) {
+        return restTemplate.postForEntity(AuthController.REFRESH, refreshTokenStr, String.class);
     }
 
     public String refreshTokenOk(String refreshToken) {
@@ -150,7 +151,7 @@ public class Common {
     }
 
     public void setup() {
-//        loginFred();
+        loginFred();
         addCarMakes();
         addCarModels();
         addCarParts();

@@ -1,8 +1,5 @@
-package carPartsStore.authorization;
+package carPartsStore.auth;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,18 +7,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
 public class UserDetailsImpl implements UserDetails {
-    private String login;
-    private String password;
-    private List<UserRole> roles;
-    private Collection<? extends GrantedAuthority> authorities;
+    private final List<UserRole> roles;
+    private final String username, encryptedPassword;
+    private final Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsImpl(String login, String password, UserRole... roles) {
-        this.login = login;
-        this.password = password;
+    public UserDetailsImpl(String username, String encryptedPassword, UserRole... roles) {
+        this.username = username;
+        this.encryptedPassword = encryptedPassword;
         this.roles = List.of(roles);
 
         authorities = this.roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role.name())).toList();
@@ -34,7 +27,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public String getUsername() {
-        return login;
+        return username;
     }
 
     @Override
@@ -55,5 +48,10 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    @Override
+    public String getPassword() {
+        return encryptedPassword;
     }
 }

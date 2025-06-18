@@ -1,4 +1,4 @@
-package carPartsStore.authorization;
+package carPartsStore.auth;
 
 public enum UserRole {
     ADMIN, USER;

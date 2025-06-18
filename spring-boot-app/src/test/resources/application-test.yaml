@@ -1,7 +1,8 @@
 spring:
   jpa:
     show-sql: true
-    hibernate.ddl-auto: none
+    hibernate.ddl-auto: update
+
 #  datasource:
 #    url: jdbc:tc:postgresql:17.5:///integration-tests-db
 #    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver

@@ -12,14 +12,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-@Component
+//@Component
 public class SecurityFilter extends OncePerRequestFilter {
     private final TokenService tokenService;
-    private final UserDetailsService userDetailsService;
 
-    public SecurityFilter(UserDetailsService userDetailsService, TokenService tokenService) {
+    public SecurityFilter(TokenService tokenService) {
         this.tokenService = tokenService;
-        this.userDetailsService = userDetailsService;
     }
 
     @Override
@@ -30,10 +28,10 @@ public class SecurityFilter extends OncePerRequestFilter {
         var token = recoverToken(request);
 
         if (token != null) {
-            var login = tokenService.validateToken(token);
-            var user = userDetailsService.getByLogin(login);
-            var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+//            var login = tokenService.validateToken(token);
+//            var user = userDetailsService.getByLogin(login);
+//            var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+//            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);

@@ -11,11 +11,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping(AuthController.ROOT)
+//@RestController
+//@RequestMapping(AuthController.ROOT)
 public class AuthController {
     static public final String NAME = "auth";
     static public final String ROOT = "/" + NAME;
+
+    static public final String LOGIN = ROOT + "/login";
+    static public final String LOGOUT = ROOT + "/logout";
+    static public final String REFRESH = ROOT + "/refresh";
 
     static private final String BEARER_PREFIX = "Bearer ";
 
@@ -28,14 +32,16 @@ public class AuthController {
         this.authenticationManager = authenticationManager;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<TokenDTO> login(@RequestBody LoginDTO data) {
-        var authToken = new UsernamePasswordAuthenticationToken(data.login(), data.password());
-        var authUser = authenticationManager.authenticate(authToken);
-        var accessToken = tokenService.buildAccessToken((User)authUser.getPrincipal());
-
-        return ResponseEntity.ok(new TokenDTO(accessToken));
-    }
+//    @PostMapping("/login")
+//    public ResponseEntity<TokenDTO> login(@RequestBody LoginDTO dto) {
+//        String login = dto.login();
+//        String password = dto.password();
+//        var authToken = new UsernamePasswordAuthenticationToken(login, password);
+//        var authUser = authenticationManager.authenticate(authToken);
+//        var accessToken = tokenService.buildAccessToken((User)authUser.getPrincipal());
+//
+//        return ResponseEntity.ok(new TokenDTO(accessToken));
+//    }
 
     private String getTokenFromAuthorizationHeader(String authHeader) {
         boolean isValidValue = (authHeader != null && authHeader.startsWith(BEARER_PREFIX));
@@ -44,24 +50,24 @@ public class AuthController {
         return authHeader.substring(BEARER_PREFIX.length());
     }
 
-    @PostMapping("/refresh")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<TokenDTO> refresh(@RequestHeader("Authorization") String authHeader) {
-        String token = getTokenFromAuthorizationHeader(authHeader);
-        String user = tokenService.validateToken(token);
-
-        tokenService.blockToken(token);
-        String newAccessToken = tokenService.buildRefreshedAccessToken(new User(user, "", null));
-        return ResponseEntity.ok(new TokenDTO(newAccessToken));
-    }
-
-    @PostMapping("/logout")
-    @ResponseStatus(HttpStatus.OK)
-    public void logout(@RequestHeader("Authorization") String authHeader) {
-        String token = getTokenFromAuthorizationHeader(authHeader);
-        String user = tokenService.validateToken(token);
-
-        tokenService.blockToken(token);
-        logger.info("Successfully logged out: {}", user);
-    }
+//    @PostMapping("/refresh")
+//    @ResponseStatus(HttpStatus.OK)
+//    public ResponseEntity<TokenDTO> refresh(@RequestHeader("Authorization") String authHeader) {
+//        String token = getTokenFromAuthorizationHeader(authHeader);
+//        String user = tokenService.validateToken(token);
+//
+//        tokenService.blockToken(token);
+//        String newAccessToken = tokenService.buildRefreshedAccessToken(new User(user, "", null));
+//        return ResponseEntity.ok(new TokenDTO(newAccessToken));
+//    }
+//
+//    @PostMapping("/logout")
+//    @ResponseStatus(HttpStatus.OK)
+//    public void logout(@RequestHeader("Authorization") String authHeader) {
+//        String token = getTokenFromAuthorizationHeader(authHeader);
+//        String user = tokenService.validateToken(token);
+//
+//        tokenService.blockToken(token);
+//        logger.info("Successfully logged out: {}", user);
+//    }
 }
