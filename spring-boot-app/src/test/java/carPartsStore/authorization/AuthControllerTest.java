@@ -56,7 +56,7 @@ public class AuthControllerTest {
     @Test
     @DirtiesContext
     void testRefreshToken() {
-        var token = common.loginFred();
+        common.loginFred();
 
 
 //        token_str1 = reply.json["access_token"]

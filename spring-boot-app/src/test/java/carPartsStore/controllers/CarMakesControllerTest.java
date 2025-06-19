@@ -5,9 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 
 import org.springframework.test.context.ActiveProfiles;
@@ -20,21 +18,18 @@ class CarMakesControllerTest {
     @Autowired
     Common common;
 
-    @Autowired
-    TestRestTemplate restTemplate;
-
     // TODO: Add tests showing that login is required to change makes.
 
     @Test
     @DirtiesContext
     void testCreateCarMake() {
-//        common.loginFred();
+        common.loginFred();
         var voidReply = common.addCarMake("Ford");
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         var location = voidReply.getHeaders().get("location");
         assertThat(location).isNotNull();
 
-        var carMakeReply = restTemplate.getForEntity(location.getFirst(), CarMakeDTO.class);
+        var carMakeReply = common.call(location.getFirst(), HttpMethod.GET, null, CarMakeDTO.class);
         assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         var carMake = carMakeReply.getBody();
         assertThat(carMake).isNotNull();
@@ -45,10 +40,9 @@ class CarMakesControllerTest {
     @DirtiesContext
     void testGetCarMake() {
         common.setup();
-//        common.logout();
+        common.logout();
 
         var carMakeReply = common.getCarMake(1L);
-
         assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(carMakeReply.hasBody()).isTrue();
 
@@ -65,7 +59,7 @@ class CarMakesControllerTest {
     void testGetCarMakeList() {
         common.setup();
 
-        var reply = restTemplate.getForEntity(CarMakesController.ROOT, CarMakeDTO[].class);
+        var reply = common.call(CarMakesController.ROOT, HttpMethod.GET, null, CarMakeDTO[].class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(reply.getBody()).isNotNull();
         CarMakeDTO[] makes = reply.getBody();
@@ -82,9 +76,7 @@ class CarMakesControllerTest {
     void testUpdateCarMake() {
         common.setup();
         var dto = CarMakeDTO.builder().name("Bogus2").build();
-        var request = new HttpEntity<>(dto);
-
-        var carMakeReply = restTemplate.exchange(CarMakesController.ROOT + "/1", HttpMethod.PUT, request, Void.class);
+        var carMakeReply = common.call(CarMakesController.ROOT + "/1", HttpMethod.PUT, dto, Void.class);
         assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         dto = common.getCarMake(1L).getBody();
@@ -97,7 +89,7 @@ class CarMakesControllerTest {
     @DirtiesContext
     void testDeleteCarMake() {
         common.setup();
-        var voidReply = restTemplate.exchange(CarMakesController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
+        var voidReply = common.call(CarMakesController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         var carMakeReply = common.getCarMake(1L);
@@ -111,7 +103,7 @@ class CarMakesControllerTest {
         var modelReply = common.getCarModel(1L);
         assertThat(modelReply.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        var voidReply = restTemplate.exchange(CarMakesController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
+        var voidReply = common.call(CarMakesController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         var carMakeReply = common.getCarMake(1L);

@@ -5,19 +5,17 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.stream.Stream;
 
 public class UserDetailsImpl implements UserDetails {
-    private final List<UserRole> roles;
     private final String username, encryptedPassword;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserDetailsImpl(String username, String encryptedPassword, UserRole... roles) {
         this.username = username;
         this.encryptedPassword = encryptedPassword;
-        this.roles = List.of(roles);
 
-        authorities = this.roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role.name())).toList();
+        authorities = Stream.of(roles).map(role -> new SimpleGrantedAuthority("ROLE_" + role.name())).toList();
     }
 
     @Override

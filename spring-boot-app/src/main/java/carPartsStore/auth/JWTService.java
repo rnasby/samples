@@ -1,41 +1,48 @@
 package carPartsStore.auth;
 
+import carPartsStore.ApplicationTraits;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.security.Principal;
+import java.util.*;
 import java.util.function.Function;
 
 @Component
 public class JWTService {
-    public static final String SECRET = "5367566859703373367639792F423F452848284D6251655468576D5A71347437";
+    private final Key signingKey;
+
+    // TODO: Change to use persistent storage in database.
+    private final Set<String> blockedTokens;
+
+    private final int tokenTimeoutMin, refreshTokenTimeoutMin;
+
+    JWTService(ApplicationTraits traits) {
+        blockedTokens = new HashSet<>();
+        var jwtTraits = traits.getSecurity().getJwt();
+
+        var key = jwtTraits.getSecretKey();
+        var bytes = key.getBytes(StandardCharsets.UTF_8);
+        signingKey = Keys.hmacShaKeyFor(bytes);
+
+        tokenTimeoutMin = jwtTraits.getTokenTimeoutMin();
+        refreshTokenTimeoutMin = jwtTraits.getRefreshTokenTimeoutMin();
+    }
 
     public String generateToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, email);
+        return new TokenBuilder(email, tokenTimeoutMin, false).build();
     }
 
-    private String createToken(Map<String, Object> claims, String email) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
-        return Keys.hmacShaKeyFor(keyBytes);
+    public String generateRefreshToken(String email) {
+        return new TokenBuilder(email, refreshTokenTimeoutMin, true).build();
     }
 
     public String extractUsername(String token) {
@@ -55,7 +62,7 @@ public class JWTService {
 //        return Jwts.parser().decryptWith((SecretKey)getSignKey()).build().parseEncryptedClaims(token).getBody();
 
         return Jwts.parserBuilder()
-                .setSigningKey(getSignKey())
+                .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -65,8 +72,53 @@ public class JWTService {
         return extractExpiration(token).before(new Date());
     }
 
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    public String assertValidToken(String token) {
+        return assertValidToken(token, (UserDetails)SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal());
+    }
+
+    public String assertValidToken(String token, UserDetails details) {
+        String username = extractUsername(token);
+        var isOk = (username.equals(details.getUsername()) && !isTokenExpired(token) && !blockedTokens.contains(
+                token));
+
+        if (!isOk) throw new IllegalArgumentException("Invalid token");
+
+        return token;
+    }
+
+    public void blockToken(String token) {
+        blockedTokens.add(token);
+    }
+
+    private class TokenBuilder {
+        final Date now;
+        final String email;
+        final Date expirationTime;
+        final boolean isRefreshToken;
+        final Map<String, Object> claims = new HashMap<>();
+
+        TokenBuilder(String email, int expirationMin, boolean isRefreshToken) {
+            now = new Date();
+
+            this.email = email;
+            this.isRefreshToken = isRefreshToken;
+            this.expirationTime = new Date(now.getTime() + (expirationMin * 60L * 1000L));
+        }
+
+        TokenBuilder addClaim(String key, Object value) {
+            claims.put(key, value);
+            return this;
+        }
+
+        String build() {
+            return Jwts.builder()
+                    .setClaims(claims)
+                    .setSubject(email)
+                    .setIssuedAt(now)
+                    .setExpiration(expirationTime)
+                    .signWith(signingKey, SignatureAlgorithm.HS256)
+                    .compact();
+        }
     }
 }

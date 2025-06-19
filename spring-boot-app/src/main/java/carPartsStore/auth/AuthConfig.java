@@ -1,6 +1,5 @@
 package carPartsStore.auth;
 
-import carPartsStore.authorization.AuthController;
 import carPartsStore.controllers.CarMakesController;
 import carPartsStore.controllers.CarModelsController;
 import carPartsStore.controllers.CarPartsController;
@@ -56,9 +55,9 @@ public class AuthConfig {
 
                     appMatchers.forEach(matcher -> {
                         auth.requestMatchers(HttpMethod.GET, matcher).permitAll();
-                        auth.requestMatchers(HttpMethod.POST, matcher).permitAll();//.hasAnyRole(adminRole);
-                        auth.requestMatchers(HttpMethod.PUT, matcher).permitAll();//.hasAnyRole(adminRole);
-                        auth.requestMatchers(HttpMethod.DELETE, matcher).permitAll();//.hasRole(adminRole);
+                        auth.requestMatchers(HttpMethod.POST, matcher).hasAnyRole(adminRole);
+                        auth.requestMatchers(HttpMethod.PUT, matcher).hasAnyRole(adminRole);
+                        auth.requestMatchers(HttpMethod.DELETE, matcher).hasRole(adminRole);
                     });
 
                     auth.anyRequest().authenticated();
