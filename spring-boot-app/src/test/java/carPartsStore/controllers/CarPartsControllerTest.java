@@ -28,7 +28,7 @@ public class CarPartsControllerTest {
     @Test
     @DirtiesContext
     void testCreateCarPart() {
-//        common.loginFred();
+        common.loginFred();
 
         var voidReply = common.addCarPart("Alternator", 500.50);
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -46,7 +46,7 @@ public class CarPartsControllerTest {
     @DirtiesContext
     void testGetCarPart() {
         common.setup();
-//        common.logout();
+        common.logout();
 
         var carPartReply = common.getCarPart(1L);
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -62,7 +62,7 @@ public class CarPartsControllerTest {
     @DirtiesContext
     void testGetCarPartList() {
         common.setup();
-//        common.logout();
+        common.logout();
 
         var reply = restTemplate.getForEntity(CarPartsController.ROOT, CarPartDTO[].class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);

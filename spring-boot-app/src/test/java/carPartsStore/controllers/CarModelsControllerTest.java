@@ -26,7 +26,7 @@ public class CarModelsControllerTest {
     @Test
     @DirtiesContext
     void testCreateCarModel() {
-//        common.loginFred();
+        common.loginFred();
         common.addCarMakes();
 
         var voidReply = common.addCarModel("Mustang", 1L, 1979, 6700.00);
@@ -45,7 +45,7 @@ public class CarModelsControllerTest {
     @DirtiesContext
     void testGetCarModel() {
         common.setup();
-//        common.logout();
+        common.logout();
 
         var carModelReply = common.getCarModel(1L);
         assertThat(carModelReply.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -61,7 +61,7 @@ public class CarModelsControllerTest {
     @DirtiesContext
     void testGetCarModelList() {
         common.setup();
-//        common.logout();
+        common.logout();
 
         var reply = restTemplate.getForEntity(CarModelsController.ROOT, CarModelDTO[].class);
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);

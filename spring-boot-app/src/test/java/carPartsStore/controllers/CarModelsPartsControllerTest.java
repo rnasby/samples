@@ -25,7 +25,7 @@ public class CarModelsPartsControllerTest {
     @Test
     @DirtiesContext
     void testAddModelCarPart() {
-//        common.loginFred();
+        common.loginFred();
         common.addCarMakes();
         common.addCarModels();
         common.addCarParts();
@@ -39,7 +39,7 @@ public class CarModelsPartsControllerTest {
     @DirtiesContext
     void testGetModelParts() {
         common.setup();
-//        common.logout();
+        common.logout();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1");
         var reply = restTemplate.getForEntity(url, CarPartDTO[].class);

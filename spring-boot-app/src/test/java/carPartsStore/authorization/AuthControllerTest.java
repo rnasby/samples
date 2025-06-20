@@ -2,7 +2,6 @@ package carPartsStore.authorization;
 
 import carPartsStore.Common;
 import carPartsStore.auth.AuthController;
-import carPartsStore.auth.AuthDTO;
 import carPartsStore.auth.TokenDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
