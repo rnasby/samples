@@ -34,9 +34,9 @@ public class AuthController {
                 dto.getPassword()));
 
         if (authentication.isAuthenticated()) {
-            String token = jwtService.generateToken(username);
-            String refreshToken = jwtService.generateRefreshToken(username);
-            return ResponseEntity.ok(TokenDTO.builder().accessToken(token).refreshToken(refreshToken).build());
+            String accessToken = jwtService.newAccessToken(username);
+            String refreshToken = jwtService.newRefreshToken(username);
+            return ResponseEntity.ok(new TokenDTO(accessToken, refreshToken));
         } else {
             throw new UsernameNotFoundException("Invalid user request!");
         }
@@ -55,7 +55,8 @@ public class AuthController {
         String token = jwtService.assertValidToken(getTokenFromAuthorizationHeader(authHeader));
 
         jwtService.blockToken(token);
-        String newAccessToken = jwtService.generateRefreshToken(principal.getName());
+        String username = principal.getName();
+        String newAccessToken = jwtService.newAccessToken(username);
         return ResponseEntity.ok(new TokenDTO(newAccessToken, null));
     }
 

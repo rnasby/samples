@@ -5,14 +5,10 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.security.Principal;
 import java.util.*;
 import java.util.function.Function;
 
@@ -37,15 +33,15 @@ public class JWTService {
         refreshTokenTimeoutMin = jwtTraits.getRefreshTokenTimeoutMin();
     }
 
-    public String generateToken(String email) {
-        return new TokenBuilder(email, tokenTimeoutMin, false).build();
+    public String newAccessToken(String email) {
+        return new TokenBuilder(email, tokenTimeoutMin).build();
     }
 
-    public String generateRefreshToken(String email) {
-        return new TokenBuilder(email, refreshTokenTimeoutMin, true).build();
+    public String newRefreshToken(String email) {
+        return new TokenBuilder(email, refreshTokenTimeoutMin).build();
     }
 
-    public String extractUsername(String token) {
+    public String extractSubject(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -59,13 +55,10 @@ public class JWTService {
     }
 
     private Claims extractAllClaims(String token) {
-//        return Jwts.parser().decryptWith((SecretKey)getSignKey()).build().parseEncryptedClaims(token).getBody();
+        return Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(token).getBody();
 
-        return Jwts.parserBuilder()
-                .setSigningKey(signingKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        // TODO: With updated library use: return Jwts.parser().decryptWith((SecretKey)getSignKey()).build()
+        //                                            .parseEncryptedClaims(token).getBody();
     }
 
     private Boolean isTokenExpired(String token) {
@@ -73,16 +66,9 @@ public class JWTService {
     }
 
     public String assertValidToken(String token) {
-        return assertValidToken(token, (UserDetails)SecurityContextHolder.getContext().getAuthentication()
-                .getPrincipal());
-    }
-
-    public String assertValidToken(String token, UserDetails details) {
-        String username = extractUsername(token);
-        var isOk = (username.equals(details.getUsername()) && !isTokenExpired(token) && !blockedTokens.contains(
-                token));
-
-        if (!isOk) throw new IllegalArgumentException("Invalid token");
+        var isExpired = isTokenExpired(token);
+        var isBlocked = blockedTokens.contains(token);
+        if (isExpired || isBlocked) throw new IllegalArgumentException("Invalid token");
 
         return token;
     }
@@ -93,16 +79,14 @@ public class JWTService {
 
     private class TokenBuilder {
         final Date now;
-        final String email;
+        final String subject;
         final Date expirationTime;
-        final boolean isRefreshToken;
         final Map<String, Object> claims = new HashMap<>();
 
-        TokenBuilder(String email, int expirationMin, boolean isRefreshToken) {
+        TokenBuilder(String subject, int expirationMin) {
             now = new Date();
 
-            this.email = email;
-            this.isRefreshToken = isRefreshToken;
+            this.subject = subject;
             this.expirationTime = new Date(now.getTime() + (expirationMin * 60L * 1000L));
         }
 
@@ -113,9 +97,9 @@ public class JWTService {
 
         String build() {
             return Jwts.builder()
-                    .setClaims(claims)
-                    .setSubject(email)
                     .setIssuedAt(now)
+                    .setClaims(claims)
+                    .setSubject(subject)
                     .setExpiration(expirationTime)
                     .signWith(signingKey, SignatureAlgorithm.HS256)
                     .compact();

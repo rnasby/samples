@@ -1,7 +1,12 @@
-package carPartsStore.controllers;
+package carPartsStore;
 
 import carPartsStore.auth.AuthDTO;
 import carPartsStore.auth.AuthController;
+import carPartsStore.auth.TokenDTO;
+import carPartsStore.controllers.CarMakesController;
+import carPartsStore.controllers.CarModelsController;
+import carPartsStore.controllers.CarModelsPartsController;
+import carPartsStore.controllers.CarPartsController;
 import carPartsStore.dto.*;
 import org.springframework.http.*;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -11,18 +16,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Component
 public class Common {
-    private TokenDTO lastAuth;
-    final TestRestTemplate restTemplate;
+    private final TestRestTemplate restTemplate;
+    private String lastAccessToken, lastRefreshToken;
 
     Common(TestRestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    public <REQ, RES> ResponseEntity<RES> call(String uri, HttpMethod method, REQ request, Class<RES> replyType) {
-       var headers = new HttpHeaders();
-       if (lastAuth != null) headers.set("Authorization", "Bearer " + lastAuth.accessToken());
-
-       return restTemplate.exchange(uri, method, new HttpEntity<>(request, headers), replyType);
+    public <REQ, RES> Call<REQ, RES> newCall(String uri, HttpMethod method, Class<RES> replyType) {
+        return new Call<REQ, RES>(uri, method, replyType);
     }
 
     public ResponseEntity<TokenDTO> login(String username, String password) {
@@ -30,7 +32,7 @@ public class Common {
         return restTemplate.postForEntity(AuthController.ROOT + AuthController.LOGIN, request, TokenDTO.class);
     }
 
-    public void validateTokenRequest(ResponseEntity<TokenDTO> reply) {
+    private TokenDTO validateTokenRequest(ResponseEntity<TokenDTO> reply) {
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(reply.hasBody()).isTrue();
 
@@ -38,29 +40,40 @@ public class Common {
         assertThat(headers).isNotNull();
         assertThat(headers.getFirst()).isEqualTo(MediaType.APPLICATION_JSON.toString());
 
-        lastAuth = reply.getBody();
-        assertThat(lastAuth).isNotNull();
+        var dto = reply.getBody();
+        assertThat(dto).isNotNull();
+
+        lastAccessToken = dto.accessToken();
+        assertThat(lastAccessToken).isNotNull();
+
+        return dto;
     }
 
-    public void loginOk(String username, String password) {
-        validateTokenRequest(login(username, password));
+    public TokenDTO loginOk(String username, String password) {
+        var dto = validateTokenRequest(login(username, password));
+
+        lastRefreshToken = dto.refreshToken();
+        assertThat(lastRefreshToken).isNotNull();
+
+        return dto;
     }
 
-    public void loginFred() {
-        loginOk("fred", "pebbles");
+    public TokenDTO loginFred() {
+        return loginOk("fred", "pebbles");
     }
 
     public ResponseEntity<String> logout() {
-        lastAuth = null;
-        return restTemplate.postForEntity(AuthController.LOGOUT, null, String.class);
+        lastAccessToken = null;
+        lastRefreshToken = null;
+        return restTemplate.postForEntity(AuthController.ROOT + AuthController.LOGOUT, null, String.class);
     }
 
-    public ResponseEntity<TokenDTO> refreshToken(String refreshTokenStr) {
-        return restTemplate.postForEntity(AuthController.REFRESH, refreshTokenStr, TokenDTO.class);
+    public ResponseEntity<TokenDTO> refreshToken() {
+        return newCall(AuthController.ROOT + AuthController.REFRESH, HttpMethod.POST, TokenDTO.class).withRefreshToken().call();
     }
 
-    public void refreshTokenOk(String refreshToken) {
-        validateTokenRequest(refreshToken(refreshToken));
+    public TokenDTO refreshTokenOk() {
+        return validateTokenRequest(refreshToken());
     }
 
     public void assertFordMake(CarMakeDTO make) {
@@ -84,12 +97,13 @@ public class Common {
 
     public ResponseEntity<CarMakeDTO> getCarMake(Long id) {
         String url = CarMakesController.ROOT + "/" + id;
-        return call(url, HttpMethod.GET, null, CarMakeDTO.class);
+        return newCall(url, HttpMethod.GET, CarMakeDTO.class).call();
     }
 
     public ResponseEntity<Void> addCarMake(String name) {
         var dto = CarMakeDTO.builder().name(name).build();
-        var reply = call(CarMakesController.ROOT, HttpMethod.POST, dto, Void.class);
+        var reply = newCall(CarMakesController.ROOT, HttpMethod.POST, Void.class).withRequest(dto)
+                .withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -107,7 +121,8 @@ public class Common {
 
     public ResponseEntity<Void> addCarModel(String name, Long makeId, Integer year, Double price) {
         var dto = CarModelDTO.builder().name(name).carMakeId(makeId).year(year).price(price).build();
-        var reply = call(CarModelsController.ROOT, HttpMethod.POST, dto, Void.class);
+        var reply = newCall(CarModelsController.ROOT, HttpMethod.POST, Void.class).withRequest(dto)
+                .withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -120,12 +135,13 @@ public class Common {
 
     public ResponseEntity<CarPartDTO> getCarPart(Long id) {
         String url = CarPartsController.ROOT + "/" + id;
-        return call(url, HttpMethod.GET, null, CarPartDTO.class);
+        return newCall(url, HttpMethod.GET, CarPartDTO.class).call();
     }
 
     public ResponseEntity<Void> addCarPart(String name, Double price) {
         var dto = CarPartDTO.builder().name(name).price(price).build();
-        var reply = call(CarPartsController.ROOT, HttpMethod.POST, dto, Void.class);
+        var reply = newCall(CarPartsController.ROOT, HttpMethod.POST, Void.class).withRequest(dto).withAuth()
+                .call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -138,7 +154,7 @@ public class Common {
 
     public ResponseEntity<Void> addCarModelPart(Long modelId, Long partId) {
         String url = CarModelsPartsController.ROOT.replace("{modelId}", modelId.toString()) + "/" + partId;
-        var reply = call(url, HttpMethod.POST, null, Void.class);
+        var reply = newCall(url, HttpMethod.POST, Void.class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -157,5 +173,49 @@ public class Common {
         addCarModels();
         addCarParts();
         addCarModelParts();
+    }
+
+    public class Call<REQ, RES> {
+        private final String uri;
+        private final HttpMethod method;
+        private final Class<RES> replyType;
+
+        private REQ request;
+        private String token;
+
+        private Call(String uri, HttpMethod method, Class<RES> replyType) {
+            this.uri = uri;
+            this.method = method;
+            this.replyType = replyType;
+        }
+
+        public Call<REQ, RES> withRequest(REQ request) {
+            this.request = request;
+            return this;
+        }
+
+        public Call<REQ, RES> withAuth() {
+            if (lastAccessToken == null) throw new IllegalStateException("No last access token available");
+            token = lastAccessToken;
+            return this;
+        }
+
+        public Call<REQ, RES> withRefreshToken() {
+            if (lastRefreshToken == null) throw new IllegalStateException("No last refresh token available");
+            token = lastRefreshToken;
+            return this;
+        }
+
+        public Call<REQ, RES> withToken(String token) {
+            this.token = token;
+            return this;
+        }
+
+        public ResponseEntity<RES> call() {
+            var headers = new HttpHeaders();
+            if (token != null) headers.set("Authorization", "Bearer " + token);
+
+            return restTemplate.exchange(uri, method, new HttpEntity<>(request, headers), replyType);
+        }
     }
 }

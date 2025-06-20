@@ -1,5 +1,6 @@
 package carPartsStore.controllers;
 
+import carPartsStore.Common;
 import carPartsStore.dto.CarMakeDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ class CarMakesControllerTest {
         var location = voidReply.getHeaders().get("location");
         assertThat(location).isNotNull();
 
-        var carMakeReply = common.call(location.getFirst(), HttpMethod.GET, null, CarMakeDTO.class);
+        var carMakeReply = common.newCall(location.getFirst(), HttpMethod.GET, CarMakeDTO.class).call();
         assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         var carMake = carMakeReply.getBody();
         assertThat(carMake).isNotNull();
@@ -59,7 +60,7 @@ class CarMakesControllerTest {
     void testGetCarMakeList() {
         common.setup();
 
-        var reply = common.call(CarMakesController.ROOT, HttpMethod.GET, null, CarMakeDTO[].class);
+        var reply = common.newCall(CarMakesController.ROOT, HttpMethod.GET, CarMakeDTO[].class).call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(reply.getBody()).isNotNull();
         CarMakeDTO[] makes = reply.getBody();
@@ -76,7 +77,8 @@ class CarMakesControllerTest {
     void testUpdateCarMake() {
         common.setup();
         var dto = CarMakeDTO.builder().name("Bogus2").build();
-        var carMakeReply = common.call(CarMakesController.ROOT + "/1", HttpMethod.PUT, dto, Void.class);
+        var carMakeReply = common.newCall(CarMakesController.ROOT + "/1", HttpMethod.PUT, Void.class)
+                .withRequest(dto).withAuth().call();
         assertThat(carMakeReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         dto = common.getCarMake(1L).getBody();
@@ -89,7 +91,8 @@ class CarMakesControllerTest {
     @DirtiesContext
     void testDeleteCarMake() {
         common.setup();
-        var voidReply = common.call(CarMakesController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
+        var voidReply = common.newCall(CarMakesController.ROOT + "/1", HttpMethod.DELETE, Void.class).withAuth()
+                .call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         var carMakeReply = common.getCarMake(1L);
@@ -103,7 +106,8 @@ class CarMakesControllerTest {
         var modelReply = common.getCarModel(1L);
         assertThat(modelReply.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        var voidReply = common.call(CarMakesController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
+        var voidReply = common.newCall(CarMakesController.ROOT + "/1", HttpMethod.DELETE, Void.class).withAuth()
+                .call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         var carMakeReply = common.getCarMake(1L);

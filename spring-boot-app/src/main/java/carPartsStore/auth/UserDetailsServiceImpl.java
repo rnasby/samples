@@ -19,8 +19,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         users = List.of(
             new UserDetailsImpl("fred", passwordEncoder.encode("pebbles"), UserRole.USER, UserRole.ADMIN),
-            new UserDetailsImpl("mary", passwordEncoder.encode("password123"), UserRole.USER),
-            new UserDetailsImpl("joe", passwordEncoder.encode("password456"), UserRole.USER, UserRole.ADMIN)
+            new UserDetailsImpl("barney", passwordEncoder.encode("bambam"), UserRole.USER)
         );
     }
 

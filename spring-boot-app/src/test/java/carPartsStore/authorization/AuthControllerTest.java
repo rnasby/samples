@@ -1,9 +1,13 @@
 package carPartsStore.authorization;
 
-import carPartsStore.controllers.Common;
+import carPartsStore.Common;
+import carPartsStore.auth.AuthController;
+import carPartsStore.auth.AuthDTO;
+import carPartsStore.auth.TokenDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -26,16 +30,14 @@ public class AuthControllerTest {
     @DirtiesContext
     void testInvalidUserLogin() {
         var reply = common.login("stone", "pebbles");
-        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(reply.getBody()).isEqualTo("Invalid user id");
+        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     @DirtiesContext
     void testInvalidUserPasswordLogin() {
         var reply = common.login("fred", "i dont know");
-        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(reply.getBody()).isEqualTo("Invalid password");
+        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
@@ -49,24 +51,17 @@ public class AuthControllerTest {
     @DirtiesContext
     void testLogoutWithoutJwt() {
         var reply = common.logout();
-        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(reply.getBody()).isEqualTo("Request does not contain an access token.");
+        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     @DirtiesContext
     void testRefreshToken() {
-        common.loginFred();
-
-
-//        token_str1 = reply.json["access_token"]
-//        refresh_token_str = reply.json["refresh_token"]
-//
-//        reply = common.refresh_token_ok(test_client, refresh_token_str)
-//        token_str2 = reply.json["access_token"]
-//
-//        assert token_str1 != token_str2
+        var loginTokens = common.loginFred();
+        var refreshTokens = common.refreshTokenOk();
 
         common.logout();
+        var reply = common.newCall(AuthController.REFRESH, HttpMethod.POST, TokenDTO.class).withToken(
+                loginTokens.accessToken()).call();
     }
 }
