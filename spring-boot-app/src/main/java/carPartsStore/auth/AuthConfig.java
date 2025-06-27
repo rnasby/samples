@@ -1,83 +1,92 @@
 package carPartsStore.auth;
 
+import carPartsStore.ApplicationTraits;
 import carPartsStore.controllers.CarMakesController;
 import carPartsStore.controllers.CarModelsController;
 import carPartsStore.controllers.CarPartsController;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.*;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.security.KeyPair;
+import java.security.interfaces.RSAPublicKey;
 import java.util.stream.Stream;
 
 @Configuration
 @EnableWebSecurity
 public class AuthConfig {
-    private final JWTFilter jwtFilter;
-    private final UserDetailsServiceImpl detailsService;
+    public enum UserRole {
+        ADMIN, USER;
+    }
 
-    public AuthConfig(JWTFilter jwtFilter, UserDetailsServiceImpl detailsService) {
-        this.jwtFilter = jwtFilter;
-        this.detailsService = detailsService;
+    public AuthConfig() {
+    }
+
+    @Bean
+    public KeyPair jwtKeyPair(ApplicationTraits traits) {
+        return traits.getSecurity().getJwt().getRSAKeyPair();
+    }
+
+    @Bean
+    public JwtEncoder jwtEncoder(KeyPair jwtKeyPair) {
+        var privateKey = jwtKeyPair.getPrivate();
+        var publicKey = (RSAPublicKey)jwtKeyPair.getPublic();
+        var jwk = new RSAKey.Builder(publicKey).privateKey(privateKey).build();
+        var jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
+
+        return new NimbusJwtEncoder(jwks);
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(KeyPair jwtKeyPair) {
+        var publicKey = (RSAPublicKey)jwtKeyPair.getPublic();
+        return NimbusJwtDecoder.withPublicKey(publicKey).build();
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        String adminRole = UserRole.ADMIN.name();
         String authMatcher = AuthController.ROOT + "/**";
+        String adminRole = UserRole.ADMIN.name();
         var appMatchers = Stream.of(CarMakesController.ROOT, CarModelsController.ROOT, CarPartsController.ROOT)
                 .map(p -> p + "/**").toList();
 
         http
-                // Disable CSRF (not needed for stateless JWT)
-                .csrf(AbstractHttpConfigurer::disable)
+            // Disable CSRF (not needed for stateless JWT)
+            .csrf(AbstractHttpConfigurer::disable)
 
-                // Stateless session (required for JWT)
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .httpBasic(Customizer.withDefaults())
+            .oauth2ResourceServer(auth -> auth.jwt(Customizer.withDefaults()))
 
-                // Set custom authentication provider
-                .authenticationProvider(authenticationProvider())
+            // Stateless session (required for JWT)
+            .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Add JWT filter before Spring Security's default filter
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            // Configure endpoint authorization
+            .authorizeHttpRequests(auth -> {
+                auth.requestMatchers(HttpMethod.POST, authMatcher).permitAll();
 
-                // Configure endpoint authorization
-                .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers(HttpMethod.POST, authMatcher).permitAll();
-
-                    appMatchers.forEach(matcher -> {
-                        auth.requestMatchers(HttpMethod.GET, matcher).permitAll();
-                        auth.requestMatchers(HttpMethod.POST, matcher).hasAnyRole(adminRole);
-                        auth.requestMatchers(HttpMethod.PUT, matcher).hasAnyRole(adminRole);
-                        auth.requestMatchers(HttpMethod.DELETE, matcher).hasRole(adminRole);
-                    });
-
-                    auth.anyRequest().authenticated();
+                appMatchers.forEach(matcher -> {
+                    auth.requestMatchers(HttpMethod.GET, matcher).permitAll();
+                    auth.requestMatchers(HttpMethod.POST, matcher).hasAuthority("SCOPE_" + adminRole);
+                    auth.requestMatchers(HttpMethod.PUT, matcher).hasAuthority("SCOPE_" + adminRole);
+                    auth.requestMatchers(HttpMethod.DELETE, matcher).hasAuthority("SCOPE_" + adminRole);
                 });
 
+                auth.anyRequest().authenticated();
+            });
 
         return http.build();
-    }
-
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        var provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(detailsService);
-        provider.setPasswordEncoder(detailsService.getPasswordEncoder());
-
-        return provider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
     }
 }

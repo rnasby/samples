@@ -1,6 +1,5 @@
 package carPartsStore;
 
-import carPartsStore.auth.AuthDTO;
 import carPartsStore.auth.AuthController;
 import carPartsStore.auth.TokenDTO;
 import carPartsStore.controllers.CarMakesController;
@@ -28,8 +27,8 @@ public class Common {
     }
 
     public ResponseEntity<TokenDTO> login(String username, String password) {
-        var request = new AuthDTO(username, password);
-        return restTemplate.postForEntity(AuthController.ROOT + AuthController.LOGIN, request, TokenDTO.class);
+        return restTemplate.withBasicAuth(username, password).postForEntity(AuthController.ROOT + AuthController.LOGIN,
+                null, TokenDTO.class);
     }
 
     private TokenDTO validateTokenRequest(ResponseEntity<TokenDTO> reply) {

@@ -1,68 +1,58 @@
 package carPartsStore.auth;
 
 import carPartsStore.ApplicationTraits;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class JWTService {
-    private final Key signingKey;
-
     // TODO: Change to use persistent storage in database.
     private final Set<String> blockedTokens;
 
+    private final JwtEncoder encoder;
+    private final JwtDecoder decoder;
     private final int tokenTimeoutMin, refreshTokenTimeoutMin;
 
-    JWTService(ApplicationTraits traits) {
+    JWTService(ApplicationTraits traits, JwtEncoder encoder, JwtDecoder decoder) {
+        this.encoder = encoder;
+        this.decoder = decoder;
+
         blockedTokens = new HashSet<>();
         var jwtTraits = traits.getSecurity().getJwt();
-
-        var key = jwtTraits.getSecretKey();
-        var bytes = key.getBytes(StandardCharsets.UTF_8);
-        signingKey = Keys.hmacShaKeyFor(bytes);
 
         tokenTimeoutMin = jwtTraits.getTokenTimeoutMin();
         refreshTokenTimeoutMin = jwtTraits.getRefreshTokenTimeoutMin();
     }
 
-    public String newAccessToken(String email) {
-        return new TokenBuilder(email, tokenTimeoutMin).build();
+    public String newAccessToken(Authentication authentication) {
+        return new TokenBuilder(authentication, tokenTimeoutMin).build();
     }
 
-    public String newRefreshToken(String email) {
-        return new TokenBuilder(email, refreshTokenTimeoutMin).build();
+    public String newRefreshToken(Authentication authentication) {
+        return new TokenBuilder(authentication, refreshTokenTimeoutMin).build();
     }
 
     public String extractSubject(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return parseToken(token).getSubject();
     }
 
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+    private Jwt parseToken(String token) {
+        return decoder.decode(token);
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(token).getBody();
-
-        // TODO: With updated library use: return Jwts.parser().decryptWith((SecretKey)getSignKey()).build()
-        //                                            .parseEncryptedClaims(token).getBody();
+    public Instant extractExpiration(String token) {
+        return parseToken(token).getExpiresAt();
     }
 
     private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        return extractExpiration(token).isBefore(Instant.now());
     }
 
     public String assertValidToken(String token) {
@@ -78,31 +68,29 @@ public class JWTService {
     }
 
     private class TokenBuilder {
-        final Date now;
-        final String subject;
-        final Date expirationTime;
-        final Map<String, Object> claims = new HashMap<>();
+        final Instant now, expirationTime;
+        final Authentication authentication;
 
-        TokenBuilder(String subject, int expirationMin) {
-            now = new Date();
+        TokenBuilder(Authentication authentication, int expirationMin) {
+            now = Instant.now();
 
-            this.subject = subject;
-            this.expirationTime = new Date(now.getTime() + (expirationMin * 60L * 1000L));
-        }
-
-        TokenBuilder addClaim(String key, Object value) {
-            claims.put(key, value);
-            return this;
+            this.authentication = authentication;
+            this.expirationTime = now.plus(expirationMin, ChronoUnit.MINUTES);
         }
 
         String build() {
-            return Jwts.builder()
-                    .setIssuedAt(now)
-                    .setClaims(claims)
-                    .setSubject(subject)
-                    .setExpiration(expirationTime)
-                    .signWith(signingKey, SignatureAlgorithm.HS256)
-                    .compact();
+            String scope = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.joining(" "));
+
+            JwtClaimsSet claims = JwtClaimsSet.builder()
+                    .issuer("self")
+                    .issuedAt(now)
+                    .expiresAt(expirationTime)
+                    .subject(authentication.getName())
+                    .claim("scope", scope)
+                    .build();
+
+            return encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
         }
     }
 }

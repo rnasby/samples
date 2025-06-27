@@ -16,3 +16,9 @@ custom:
     jwt:
       secret-key: "${random.uuid}"
       refresh-token-timeout-min: 120
+
+logging:
+  level:
+    org:
+      springframework:
+        security: TRACE

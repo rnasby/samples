@@ -3,13 +3,11 @@ package carPartsStore.auth;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
 
 @RestController
 @RequestMapping(AuthController.ROOT)
@@ -25,17 +23,12 @@ public class AuthController {
     static private final String BEARER_PREFIX = "Bearer ";
 
     private final JWTService jwtService;
-    private final AuthenticationManager authenticationManager;
 
     @PostMapping(LOGIN)
-    public ResponseEntity<TokenDTO> login(@RequestBody AuthDTO dto) {
-        var username = dto.getUsername();
-        var authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username,
-                dto.getPassword()));
-
+    public ResponseEntity<TokenDTO> login(Authentication authentication) {
         if (authentication.isAuthenticated()) {
-            String accessToken = jwtService.newAccessToken(username);
-            String refreshToken = jwtService.newRefreshToken(username);
+            String accessToken = jwtService.newAccessToken(authentication);
+            String refreshToken = jwtService.newRefreshToken(authentication);
             return ResponseEntity.ok(new TokenDTO(accessToken, refreshToken));
         } else {
             throw new UsernameNotFoundException("Invalid user request!");
@@ -51,12 +44,12 @@ public class AuthController {
 
     @PostMapping(REFRESH)
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<TokenDTO> refresh(@RequestHeader("Authorization") String authHeader, Principal principal) {
+    public ResponseEntity<TokenDTO> refresh(@RequestHeader("Authorization") String authHeader) {
         String token = jwtService.assertValidToken(getTokenFromAuthorizationHeader(authHeader));
 
         jwtService.blockToken(token);
-        String username = principal.getName();
-        String newAccessToken = jwtService.newAccessToken(username);
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        String newAccessToken = jwtService.newAccessToken(auth);
         return ResponseEntity.ok(new TokenDTO(newAccessToken, null));
     }
 

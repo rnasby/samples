@@ -29,14 +29,14 @@ public class AuthControllerTest {
     @DirtiesContext
     void testInvalidUserLogin() {
         var reply = common.login("stone", "pebbles");
-        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
     @DirtiesContext
     void testInvalidUserPasswordLogin() {
         var reply = common.login("fred", "i dont know");
-        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
@@ -50,7 +50,7 @@ public class AuthControllerTest {
     @DirtiesContext
     void testLogoutWithoutJwt() {
         var reply = common.logout();
-        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test

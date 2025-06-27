@@ -11,6 +11,13 @@ spring:
 custom:
   security:
     jwt:
-      secret-key: "${JWT_SECRET}"
       token-timeout-min: 60
       refresh-token-timeout-min: 86400 # 24 hours
+
+      rsa-private-key: ${RSA_PRIVATE_KEY:}
+      # Optional. If not provided, it will be generated.
+      # Example generation of a new key pair: openssl genrsa -out keypair.pem 2048
+
+      rsa-public-key: ${RSA_PUBLIC_KEY:}
+      # Optional. If not provided, it will be generated.
+      # Example to extract public key from a private key: openssl rsa -in keypair.pem -pubout -out public.pem
