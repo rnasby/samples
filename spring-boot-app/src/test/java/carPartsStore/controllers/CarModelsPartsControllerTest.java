@@ -1,12 +1,10 @@
 package carPartsStore.controllers;
 
-import carPartsStore.Common;
+import carPartsStore.Testing;
 import carPartsStore.dto.CarPartDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -17,32 +15,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CarModelsPartsControllerTest {
     @Autowired
-    Common common;
-
-    @Autowired
-    TestRestTemplate restTemplate;
+    Testing testing;
 
     @Test
     @DirtiesContext
     void testAddModelCarPart() {
-        common.loginFred();
-        common.addCarMakes();
-        common.addCarModels();
-        common.addCarParts();
+        testing.loginFred();
+        testing.addCarMakes();
+        testing.addCarModels();
+        testing.addCarParts();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1") + "/1";
-        var reply = common.newCall(url, HttpMethod.POST, Void.class).withAuth().call();
+        var reply = testing.newPost(url, Void.class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
     @Test
     @DirtiesContext
     void testGetModelParts() {
-        common.setup();
-        common.logout();
+        testing.setup();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1");
-        var reply = restTemplate.getForEntity(url, CarPartDTO[].class);
+        var reply = testing.newGet(url, CarPartDTO[].class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         var carParts = reply.getBody();
@@ -56,14 +50,14 @@ public class CarModelsPartsControllerTest {
     @Test
     @DirtiesContext
     void testDeleteModelPart() {
-        common.setup();
+        testing.setup();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1") + "/1";
-        var voidReply = common.newCall(url, HttpMethod.DELETE, Void.class).withAuth().call();
+        var voidReply = testing.newDelete(url).withAuth().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         url = CarModelsPartsController.ROOT.replace("{modelId}", "1");
-        var carPartsReply = restTemplate.getForEntity(url, CarPartDTO[].class);
+        var carPartsReply = testing.newGet(url, CarPartDTO[].class).withAuth().call();
         assertThat(carPartsReply.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         var carParts = carPartsReply.getBody();

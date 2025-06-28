@@ -1,12 +1,10 @@
 package carPartsStore.controllers;
 
-import carPartsStore.Common;
+import carPartsStore.Testing;
 import carPartsStore.dto.CarModelDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -17,57 +15,50 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CarModelsControllerTest {
     @Autowired
-    Common common;
-
-    @Autowired
-    TestRestTemplate restTemplate;
+    Testing testing;
 
     @Test
     @DirtiesContext
     void testCreateCarModel() {
-        common.loginFred();
-        common.addCarMakes();
+        testing.loginFred();
+        testing.addCarMakes();
 
-        var voidReply = common.addCarModel("Mustang", 1L, 1979, 6700.00);
+        var voidReply = testing.addCarModel("Mustang", 1L, 1979, 6700.00);
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         var location = voidReply.getHeaders().get("location");
         assertThat(location).isNotNull();
 
-        var carModelReply = restTemplate.getForEntity(location.getFirst(), CarModelDTO.class);
+        var carModelReply = testing.newGet(location.getFirst(), CarModelDTO.class).withAuth().call();
         assertThat(carModelReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         var carModel = carModelReply.getBody();
         assertThat(carModel).isNotNull();
-        common.assertMustangModel(carModelReply.getBody());
+        testing.assertMustangModel(carModelReply.getBody());
     }
 
     @Test
     @DirtiesContext
     void testGetCarModel() {
-        common.setup();
-        common.logout();
-
-        var carModelReply = common.getCarModel(1L);
+        testing.setup();
+        var carModelReply = testing.getCarModel(1L);
         assertThat(carModelReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         var carModel = carModelReply.getBody();
         assertThat(carModel).isNotNull();
-        common.assertMustangModel(carModel);
-        common.assertFordMake(carModel.getCarMake());
+        testing.assertMustangModel(carModel);
+        testing.assertFordMake(carModel.getCarMake());
         assertThat(carModel.getCarParts().size()).isEqualTo(2L);
-        common.assertAlternatorPart(carModel.getCarParts().getFirst());
+        testing.assertAlternatorPart(carModel.getCarParts().getFirst());
     }
 
     @Test
     @DirtiesContext
     void testGetCarModelList() {
-        common.setup();
-        common.logout();
-
-        var reply = restTemplate.getForEntity(CarModelsController.ROOT, CarModelDTO[].class);
+        testing.setup();
+        var reply = testing.newGet(CarModelsController.ROOT, CarModelDTO[].class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(reply.getBody()).isNotNull();
 
         CarModelDTO[] models = reply.getBody();
-        common.assertMustangModel(models[0]);
+        testing.assertMustangModel(models[0]);
 
         assertThat(models[1].getId()).isEqualTo(2L);
         assertThat(models[1].getName()).isEqualTo("Corvette");
@@ -79,14 +70,14 @@ public class CarModelsControllerTest {
     @Test
     @DirtiesContext
     void testUpdateCarModel() {
-        common.setup();
+        testing.setup();
 
         var dto = CarModelDTO.builder().name("Bogus2").carMakeId(2L).year(1910).price(1.75).build();;
-        var carModelReply = common.newCall(CarModelsController.ROOT + "/1", HttpMethod.PUT, Void.class)
-                .withRequest(dto).withAuth().call();
+        var carModelReply = testing.newPut(CarModelsController.ROOT + "/1").withRequest(dto).withAuth()
+                .call();
         assertThat(carModelReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        dto = common.getCarModel(1L).getBody();
+        dto = testing.getCarModel(1L).getBody();
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(1L);
         assertThat(dto.getName()).isEqualTo("Bogus2");
@@ -98,12 +89,12 @@ public class CarModelsControllerTest {
     @Test
     @DirtiesContext
     void testDeleteCarModel() {
-        common.setup();
+        testing.setup();
 
-        var voidReply = common.newCall(CarModelsController.ROOT + "/1", HttpMethod.DELETE, Void.class).withAuth().call();
+        var voidReply = testing.newDelete(CarModelsController.ROOT + "/1").withAuth().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        var carModelReply = common.getCarModel(1L);
+        var carModelReply = testing.getCarModel(1L);
         assertThat(carModelReply.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }

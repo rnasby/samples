@@ -28,13 +28,6 @@ import java.util.stream.Stream;
 @Configuration
 @EnableWebSecurity
 public class AuthConfig {
-    public enum UserRole {
-        ADMIN, USER;
-    }
-
-    public AuthConfig() {
-    }
-
     @Bean
     public KeyPair jwtKeyPair(ApplicationTraits traits) {
         return traits.getSecurity().getJwt().getRSAKeyPair();
@@ -59,7 +52,6 @@ public class AuthConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         String authMatcher = AuthController.ROOT + "/**";
-        String adminRole = UserRole.ADMIN.name();
         var appMatchers = Stream.of(CarMakesController.ROOT, CarModelsController.ROOT, CarPartsController.ROOT)
                 .map(p -> p + "/**").toList();
 
@@ -78,10 +70,15 @@ public class AuthConfig {
                 auth.requestMatchers(HttpMethod.POST, authMatcher).permitAll();
 
                 appMatchers.forEach(matcher -> {
-                    auth.requestMatchers(HttpMethod.GET, matcher).permitAll();
-                    auth.requestMatchers(HttpMethod.POST, matcher).hasAuthority("SCOPE_" + adminRole);
-                    auth.requestMatchers(HttpMethod.PUT, matcher).hasAuthority("SCOPE_" + adminRole);
-                    auth.requestMatchers(HttpMethod.DELETE, matcher).hasAuthority("SCOPE_" + adminRole);
+                    auth.requestMatchers(HttpMethod.GET, matcher).hasAnyAuthority(
+                            UserRole.USER.scope(),
+                            UserRole.ADMIN.scope());
+                    auth.requestMatchers(HttpMethod.POST, matcher).hasAuthority(
+                            UserRole.ADMIN.scope());
+                    auth.requestMatchers(HttpMethod.PUT, matcher).hasAuthority(
+                            UserRole.ADMIN.scope());
+                    auth.requestMatchers(HttpMethod.DELETE, matcher).hasAuthority(
+                            UserRole.ADMIN.scope());
                 });
 
                 auth.anyRequest().authenticated();

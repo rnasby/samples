@@ -1,6 +1,6 @@
 package carPartsStore.authorization;
 
-import carPartsStore.Common;
+import carPartsStore.Testing;
 import carPartsStore.auth.AuthController;
 import carPartsStore.auth.TokenDTO;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AuthControllerTest {
     @Autowired
-    Common common;
+    Testing common;
 
     @Test
     @DirtiesContext
@@ -60,7 +60,6 @@ public class AuthControllerTest {
         var refreshTokens = common.refreshTokenOk();
 
         common.logout();
-        var reply = common.newCall(AuthController.REFRESH, HttpMethod.POST, TokenDTO.class).withToken(
-                loginTokens.accessToken()).call();
+        var reply = common.newPost(AuthController.REFRESH, TokenDTO.class).withToken(loginTokens.accessToken()).call();
     }
 }

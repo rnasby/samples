@@ -14,16 +14,32 @@ import org.springframework.stereotype.Component;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Component
-public class Common {
+public class Testing {
     private final TestRestTemplate restTemplate;
     private String lastAccessToken, lastRefreshToken;
 
-    Common(TestRestTemplate restTemplate) {
+    Testing(TestRestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    public <REQ, RES> Call<REQ, RES> newCall(String uri, HttpMethod method, Class<RES> replyType) {
-        return new Call<REQ, RES>(uri, method, replyType);
+    public <RES> Call<RES> newGet(String uri, Class<RES> replyType) {
+        return newCall(uri, HttpMethod.GET, replyType);
+    }
+
+    public <RES> Call<RES> newPost(String uri, Class<RES> replyType) {
+        return newCall(uri, HttpMethod.POST, replyType);
+    }
+
+    public <RES> Call<RES> newPut(String uri) {
+        return newCall(uri, HttpMethod.PUT, (Class<RES>)Void.class);
+    }
+
+    public <RES> Call<RES> newDelete(String uri) {
+        return newCall(uri, HttpMethod.DELETE, (Class<RES>)Void.class);
+    }
+
+    private <RES> Call<RES> newCall(String uri, HttpMethod method, Class<RES> replyType) {
+        return new Call<RES>(uri, method, replyType);
     }
 
     public ResponseEntity<TokenDTO> login(String username, String password) {
@@ -62,9 +78,12 @@ public class Common {
     }
 
     public ResponseEntity<String> logout() {
-        lastAccessToken = null;
-        lastRefreshToken = null;
-        return restTemplate.postForEntity(AuthController.ROOT + AuthController.LOGOUT, null, String.class);
+        try {
+            return newCall(AuthController.ROOT + AuthController.LOGOUT, HttpMethod.POST, String.class).withAuth().call();
+        } finally {
+            lastAccessToken = null;
+            lastRefreshToken = null;
+        }
     }
 
     public ResponseEntity<TokenDTO> refreshToken() {
@@ -96,7 +115,7 @@ public class Common {
 
     public ResponseEntity<CarMakeDTO> getCarMake(Long id) {
         String url = CarMakesController.ROOT + "/" + id;
-        return newCall(url, HttpMethod.GET, CarMakeDTO.class).call();
+        return newCall(url, HttpMethod.GET, CarMakeDTO.class).withAuth().call();
     }
 
     public ResponseEntity<Void> addCarMake(String name) {
@@ -115,7 +134,7 @@ public class Common {
 
     public ResponseEntity<CarModelDTO> getCarModel(Long id) {
         String url = CarModelsController.ROOT + "/" + id;
-        return restTemplate.getForEntity(url, CarModelDTO.class);
+        return newCall(url, HttpMethod.GET, CarModelDTO.class).withAuth().call();
     }
 
     public ResponseEntity<Void> addCarModel(String name, Long makeId, Integer year, Double price) {
@@ -134,7 +153,7 @@ public class Common {
 
     public ResponseEntity<CarPartDTO> getCarPart(Long id) {
         String url = CarPartsController.ROOT + "/" + id;
-        return newCall(url, HttpMethod.GET, CarPartDTO.class).call();
+        return newCall(url, HttpMethod.GET, CarPartDTO.class).withAuth().call();
     }
 
     public ResponseEntity<Void> addCarPart(String name, Double price) {
@@ -174,13 +193,13 @@ public class Common {
         addCarModelParts();
     }
 
-    public class Call<REQ, RES> {
+    public class Call<RES> {
         private final String uri;
         private final HttpMethod method;
         private final Class<RES> replyType;
 
-        private REQ request;
         private String token;
+        private Object request;
 
         private Call(String uri, HttpMethod method, Class<RES> replyType) {
             this.uri = uri;
@@ -188,24 +207,24 @@ public class Common {
             this.replyType = replyType;
         }
 
-        public Call<REQ, RES> withRequest(REQ request) {
+        public Call<RES> withRequest(Object request) {
             this.request = request;
             return this;
         }
 
-        public Call<REQ, RES> withAuth() {
+        public Call<RES> withAuth() {
             if (lastAccessToken == null) throw new IllegalStateException("No last access token available");
             token = lastAccessToken;
             return this;
         }
 
-        public Call<REQ, RES> withRefreshToken() {
+        public Call<RES> withRefreshToken() {
             if (lastRefreshToken == null) throw new IllegalStateException("No last refresh token available");
             token = lastRefreshToken;
             return this;
         }
 
-        public Call<REQ, RES> withToken(String token) {
+        public Call<RES> withToken(String token) {
             this.token = token;
             return this;
         }

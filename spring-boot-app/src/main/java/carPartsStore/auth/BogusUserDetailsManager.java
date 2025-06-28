@@ -13,15 +13,15 @@ public class BogusUserDetailsManager extends InMemoryUserDetailsManager {
         return User.withUsername(username).password(password).authorities(roles).build();
     }
 
-    static private UserDetails newUserDetails(String username, String password, AuthConfig.UserRole... roles) {
+    static private UserDetails newUserDetails(String username, String password, UserRole... roles) {
         var roleStrs = Arrays.stream(roles).map(Enum::name).toArray(String[]::new);
         return newUserDetails(username, password, roleStrs);
     }
 
     BogusUserDetailsManager() {
         super(
-            newUserDetails("fred", "{noop}pebbles", AuthConfig.UserRole.USER, AuthConfig.UserRole.ADMIN),
-            newUserDetails("barney", "{noop}bambam", AuthConfig.UserRole.USER)
+            newUserDetails("fred", "{noop}pebbles", UserRole.USER, UserRole.ADMIN),
+            newUserDetails("barney", "{noop}bambam", UserRole.USER)
         );
     }
 }

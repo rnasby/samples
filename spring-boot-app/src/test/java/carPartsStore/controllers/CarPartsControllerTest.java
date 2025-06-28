@@ -1,13 +1,10 @@
 package carPartsStore.controllers;
 
-import carPartsStore.Common;
+import carPartsStore.Testing;
 import carPartsStore.dto.CarPartDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -20,56 +17,51 @@ public class CarPartsControllerTest {
     // TODO: Add tests showing that login is required to change parts.
 
     @Autowired
-    Common common;
-
-    @Autowired
-    TestRestTemplate restTemplate;
+    Testing testing;
 
     @Test
     @DirtiesContext
     void testCreateCarPart() {
-        common.loginFred();
+        testing.loginFred();
 
-        var voidReply = common.addCarPart("Alternator", 500.50);
+        var voidReply = testing.addCarPart("Alternator", 500.50);
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         var location = voidReply.getHeaders().get("location");
         assertThat(location).isNotNull();
 
-        var carPartReply = restTemplate.getForEntity(location.getFirst(), CarPartDTO.class);
+        var carPartReply = testing.newGet(location.getFirst(), CarPartDTO.class).withAuth().call();
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         var carPart = carPartReply.getBody();
         assertThat(carPart).isNotNull();
-        common.assertAlternatorPart(carPart);
+        testing.assertAlternatorPart(carPart);
     }
 
     @Test
     @DirtiesContext
     void testGetCarPart() {
-        common.setup();
-        common.logout();
+        testing.setup();
 
-        var carPartReply = common.getCarPart(1L);
+        var carPartReply = testing.getCarPart(1L);
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         var carPart = carPartReply.getBody();
         assertThat(carPart).isNotNull();
-        common.assertAlternatorPart(carPart);
+        testing.assertAlternatorPart(carPart);
 
         assertThat(carPart.getCarModels().size()).isEqualTo(2L);
-        common.assertMustangModel(carPart.getCarModels().getFirst());
+        testing.assertMustangModel(carPart.getCarModels().getFirst());
     }
 
     @Test
     @DirtiesContext
     void testGetCarPartList() {
-        common.setup();
-        common.logout();
+        testing.setup();
 
-        var reply = restTemplate.getForEntity(CarPartsController.ROOT, CarPartDTO[].class);
+        var reply = testing.newGet(CarPartsController.ROOT, CarPartDTO[].class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(reply.getBody()).isNotNull();
 
         CarPartDTO[] parts = reply.getBody();
-        common.assertAlternatorPart(parts[0]);
+        testing.assertAlternatorPart(parts[0]);
         assertThat(parts[0].getCarModels()).isNull();
 
         assertThat(parts[1].getId()).isEqualTo(2L);
@@ -80,14 +72,13 @@ public class CarPartsControllerTest {
     @Test
     @DirtiesContext
     void testUpdateCarPart() {
-        common.setup();
+        testing.setup();
 
         var dto = CarPartDTO.builder().name("Bogus2").price(0.75).build();
-        var carPartReply = common.newCall(CarPartsController.ROOT + "/1", HttpMethod.PUT, Void.class)
-                .withRequest(dto).withAuth().call();
+        var carPartReply = testing.newPut(CarPartsController.ROOT + "/1").withRequest(dto).withAuth().call();
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        dto = common.getCarPart(1L).getBody();
+        dto = testing.getCarPart(1L).getBody();
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(1L);
         assertThat(dto.getName()).isEqualTo("Bogus2");
@@ -97,12 +88,12 @@ public class CarPartsControllerTest {
     @Test
     @DirtiesContext
     void testDeleteCarPart() {
-        common.setup();
+        testing.setup();
 
-        var voidReply = common.newCall(CarPartsController.ROOT + "/1", HttpMethod.DELETE, Void.class).withAuth().call();
+        var voidReply = testing.newDelete(CarPartsController.ROOT + "/1").withAuth().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        var carPartsReply = common.getCarPart(1L);
+        var carPartsReply = testing.getCarPart(1L);
         assertThat(carPartsReply.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }
