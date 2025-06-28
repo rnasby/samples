@@ -31,7 +31,7 @@ public class CarModelsPartsControllerTest {
         common.addCarParts();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1") + "/1";
-        var reply = restTemplate.exchange(url, HttpMethod.POST, null, Void.class);
+        var reply = common.newCall(url, HttpMethod.POST, Void.class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
@@ -59,7 +59,7 @@ public class CarModelsPartsControllerTest {
         common.setup();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1") + "/1";
-        var voidReply = restTemplate.exchange(url, HttpMethod.DELETE, null, Void.class);
+        var voidReply = common.newCall(url, HttpMethod.DELETE, Void.class).withAuth().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         url = CarModelsPartsController.ROOT.replace("{modelId}", "1");

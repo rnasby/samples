@@ -83,9 +83,8 @@ public class CarPartsControllerTest {
         common.setup();
 
         var dto = CarPartDTO.builder().name("Bogus2").price(0.75).build();
-        var request = new HttpEntity<>(dto);
-
-        var carPartReply = restTemplate.exchange(CarPartsController.ROOT + "/1", HttpMethod.PUT, request, Void.class);
+        var carPartReply = common.newCall(CarPartsController.ROOT + "/1", HttpMethod.PUT, Void.class)
+                .withRequest(dto).withAuth().call();
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         dto = common.getCarPart(1L).getBody();
@@ -100,7 +99,7 @@ public class CarPartsControllerTest {
     void testDeleteCarPart() {
         common.setup();
 
-        var voidReply = restTemplate.exchange(CarPartsController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
+        var voidReply = common.newCall(CarPartsController.ROOT + "/1", HttpMethod.DELETE, Void.class).withAuth().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         var carPartsReply = common.getCarPart(1L);

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.annotation.DirtiesContext;
@@ -82,10 +81,9 @@ public class CarModelsControllerTest {
     void testUpdateCarModel() {
         common.setup();
 
-        var dto = CarModelDTO.builder().name("Bogus2").carMakeId(2L).year(1910).price(1.75).build();
-        var request = new HttpEntity<>(dto);
-
-        var carModelReply = restTemplate.exchange(CarModelsController.ROOT + "/1", HttpMethod.PUT, request, Void.class);
+        var dto = CarModelDTO.builder().name("Bogus2").carMakeId(2L).year(1910).price(1.75).build();;
+        var carModelReply = common.newCall(CarModelsController.ROOT + "/1", HttpMethod.PUT, Void.class)
+                .withRequest(dto).withAuth().call();
         assertThat(carModelReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         dto = common.getCarModel(1L).getBody();
@@ -102,7 +100,7 @@ public class CarModelsControllerTest {
     void testDeleteCarModel() {
         common.setup();
 
-        var voidReply = restTemplate.exchange(CarModelsController.ROOT + "/1", HttpMethod.DELETE, null, Void.class);
+        var voidReply = common.newCall(CarModelsController.ROOT + "/1", HttpMethod.DELETE, Void.class).withAuth().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         var carModelReply = common.getCarModel(1L);
