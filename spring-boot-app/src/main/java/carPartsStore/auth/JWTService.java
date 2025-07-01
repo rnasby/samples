@@ -1,6 +1,7 @@
 package carPartsStore.auth;
 
 import carPartsStore.ApplicationTraits;
+import carPartsStore.error.BadTokenException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.*;
@@ -32,19 +33,19 @@ public class JWTService {
     }
 
     public String newAccessToken(Authentication authentication) {
-        return new TokenBuilder(authentication, tokenTimeoutMin).build();
+        return new TokenBuilder(authentication, tokenTimeoutMin).build(false);
     }
 
     public String newRefreshToken(Authentication authentication) {
-        return new TokenBuilder(authentication, refreshTokenTimeoutMin).build();
-    }
-
-    public String extractSubject(String token) {
-        return parseToken(token).getSubject();
+        return new TokenBuilder(authentication, refreshTokenTimeoutMin).build(true);
     }
 
     private Jwt parseToken(String token) {
         return decoder.decode(token);
+    }
+
+    public boolean isRefreshToken(String token) {
+        return parseToken(token).getClaimAsBoolean("refresh");
     }
 
     public Instant extractExpiration(String token) {
@@ -58,7 +59,7 @@ public class JWTService {
     public String assertValidToken(String token) {
         var isExpired = isTokenExpired(token);
         var isBlocked = blockedTokens.contains(token);
-        if (isExpired || isBlocked) throw new IllegalArgumentException("Invalid token");
+        if (isExpired || isBlocked) throw new BadTokenException("Invalid token");
 
         return token;
     }
@@ -78,18 +79,18 @@ public class JWTService {
             this.expirationTime = now.plus(expirationMin, ChronoUnit.MINUTES);
         }
 
-        String build() {
-            String scope = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.joining(" "));
-
-            JwtClaimsSet claims = JwtClaimsSet.builder()
+        String build(boolean isRefreshToken) {
+            var builder = JwtClaimsSet.builder()
                     .issuer("self")
                     .issuedAt(now)
                     .expiresAt(expirationTime)
-                    .subject(authentication.getName())
-                    .claim("scope", scope)
-                    .build();
+                    .subject(authentication.getName());
 
+            builder.claim("refresh", isRefreshToken);
+            if (!isRefreshToken) builder.claim("scope", authentication.getAuthorities().stream().map(
+                    GrantedAuthority::getAuthority).collect(Collectors.joining(" ")));
+
+            JwtClaimsSet claims = builder.build();
             return encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
         }
     }

@@ -1,6 +1,6 @@
 package carPartsStore.controllers;
 
-import carPartsStore.Testing;
+import carPartsStore.AppTests;
 import carPartsStore.dto.CarPartDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,28 +15,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CarModelsPartsControllerTest {
     @Autowired
-    Testing testing;
+    AppTests appTests;
 
     @Test
     @DirtiesContext
     void testAddModelCarPart() {
-        testing.loginFred();
-        testing.addCarMakes();
-        testing.addCarModels();
-        testing.addCarParts();
+        appTests.loginFred();
+        appTests.addCarMakes();
+        appTests.addCarModels();
+        appTests.addCarParts();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1") + "/1";
-        var reply = testing.newPost(url, Void.class).withAuth().call();
+        var reply = appTests.rest.newPost(url, Void.class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
     @Test
     @DirtiesContext
     void testGetModelParts() {
-        testing.setup();
+        appTests.setup();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1");
-        var reply = testing.newGet(url, CarPartDTO[].class).withAuth().call();
+        var reply = appTests.rest.newGet(url, CarPartDTO[].class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         var carParts = reply.getBody();
@@ -50,14 +50,14 @@ public class CarModelsPartsControllerTest {
     @Test
     @DirtiesContext
     void testDeleteModelPart() {
-        testing.setup();
+        appTests.setup();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1") + "/1";
-        var voidReply = testing.newDelete(url).withAuth().call();
+        var voidReply = appTests.rest.newDelete(url).withAuth().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         url = CarModelsPartsController.ROOT.replace("{modelId}", "1");
-        var carPartsReply = testing.newGet(url, CarPartDTO[].class).withAuth().call();
+        var carPartsReply = appTests.rest.newGet(url, CarPartDTO[].class).withAuth().call();
         assertThat(carPartsReply.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         var carParts = carPartsReply.getBody();

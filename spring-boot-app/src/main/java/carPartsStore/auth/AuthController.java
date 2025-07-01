@@ -1,5 +1,6 @@
 package carPartsStore.auth;
 
+import carPartsStore.error.BadTokenException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,13 +32,13 @@ public class AuthController {
             String refreshToken = jwtService.newRefreshToken(authentication);
             return ResponseEntity.ok(new TokenDTO(accessToken, refreshToken));
         } else {
-            throw new UsernameNotFoundException("Invalid user request!");
+            throw new UsernameNotFoundException("Invalid user request");
         }
     }
 
     private String getTokenFromAuthorizationHeader(String authHeader) {
         boolean isValidValue = (authHeader != null && authHeader.startsWith(BEARER_PREFIX));
-        if (!isValidValue) throw new IllegalArgumentException("Invalid Authorization header");
+        if (!isValidValue) throw new BadTokenException("Invalid Authorization header");
 
         return authHeader.substring(BEARER_PREFIX.length());
     }
@@ -46,11 +47,16 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<TokenDTO> refresh(@RequestHeader("Authorization") String authHeader) {
         String token = jwtService.assertValidToken(getTokenFromAuthorizationHeader(authHeader));
+        if (!jwtService.isRefreshToken(token)) throw new BadTokenException("Invalid refresh token");
 
-        jwtService.blockToken(token);
         var auth = SecurityContextHolder.getContext().getAuthentication();
         String newAccessToken = jwtService.newAccessToken(auth);
-        return ResponseEntity.ok(new TokenDTO(newAccessToken, null));
+        String newRefreshToken = jwtService.newRefreshToken(auth);
+
+        // Depending on how fast the refresh is called, the new one may be the same as the old one.
+        if (!newRefreshToken.equals(token)) jwtService.blockToken(token);
+
+        return ResponseEntity.ok(new TokenDTO(newAccessToken, newRefreshToken));
     }
 
     @PostMapping(LOGOUT)
@@ -58,5 +64,7 @@ public class AuthController {
     public void logout(@RequestHeader("Authorization") String authHeader) {
         String token = jwtService.assertValidToken(getTokenFromAuthorizationHeader(authHeader));
         jwtService.blockToken(token);
+
+        // TODO: Add logic to find and block refresh token?
     }
 }

@@ -10,7 +10,7 @@ import java.util.Arrays;
 @Component
 public class BogusUserDetailsManager extends InMemoryUserDetailsManager {
     static private UserDetails newUserDetails(String username, String password, String[] roles) {
-        return User.withUsername(username).password(password).authorities(roles).build();
+        return User.withUsername(username).password(password).roles(roles).build();
     }
 
     static private UserDetails newUserDetails(String username, String password, UserRole... roles) {

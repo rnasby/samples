@@ -7,6 +7,6 @@ public enum UserRole {
     }
 
     String scope() {
-        return "SCOPE_" + name();
+        return "SCOPE_ROLE_" + name();
     }
 }

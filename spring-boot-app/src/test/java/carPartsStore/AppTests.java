@@ -7,6 +7,7 @@ import carPartsStore.controllers.CarModelsController;
 import carPartsStore.controllers.CarModelsPartsController;
 import carPartsStore.controllers.CarPartsController;
 import carPartsStore.dto.*;
+import framework.RestTests;
 import org.springframework.http.*;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.stereotype.Component;
@@ -14,32 +15,26 @@ import org.springframework.stereotype.Component;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Component
-public class Testing {
+public class AppTests {
+    public final RestTests rest;
     private final TestRestTemplate restTemplate;
-    private String lastAccessToken, lastRefreshToken;
 
-    Testing(TestRestTemplate restTemplate) {
+    AppTests(TestRestTemplate restTemplate) {
         this.restTemplate = restTemplate;
+        this.rest = new RestTests(restTemplate);
     }
 
-    public <RES> Call<RES> newGet(String uri, Class<RES> replyType) {
-        return newCall(uri, HttpMethod.GET, replyType);
+    public TokenDTO loginFred() {
+        return loginOk("fred", "pebbles");
     }
 
-    public <RES> Call<RES> newPost(String uri, Class<RES> replyType) {
-        return newCall(uri, HttpMethod.POST, replyType);
-    }
+    public TokenDTO loginOk(String username, String password) {
+        var dto = validateTokenRequest(login(username, password));
 
-    public <RES> Call<RES> newPut(String uri) {
-        return newCall(uri, HttpMethod.PUT, (Class<RES>)Void.class);
-    }
+        assertThat(dto.refreshToken()).isNotNull();
+        rest.setLastRefreshToken(dto.refreshToken());
 
-    public <RES> Call<RES> newDelete(String uri) {
-        return newCall(uri, HttpMethod.DELETE, (Class<RES>)Void.class);
-    }
-
-    private <RES> Call<RES> newCall(String uri, HttpMethod method, Class<RES> replyType) {
-        return new Call<RES>(uri, method, replyType);
+        return dto;
     }
 
     public ResponseEntity<TokenDTO> login(String username, String password) {
@@ -58,40 +53,28 @@ public class Testing {
         var dto = reply.getBody();
         assertThat(dto).isNotNull();
 
-        lastAccessToken = dto.accessToken();
-        assertThat(lastAccessToken).isNotNull();
+        assertThat(dto.accessToken()).isNotNull();
+        rest.setLastAccessToken(dto.accessToken());
 
         return dto;
-    }
-
-    public TokenDTO loginOk(String username, String password) {
-        var dto = validateTokenRequest(login(username, password));
-
-        lastRefreshToken = dto.refreshToken();
-        assertThat(lastRefreshToken).isNotNull();
-
-        return dto;
-    }
-
-    public TokenDTO loginFred() {
-        return loginOk("fred", "pebbles");
     }
 
     public ResponseEntity<String> logout() {
         try {
-            return newCall(AuthController.ROOT + AuthController.LOGOUT, HttpMethod.POST, String.class).withAuth().call();
+            return rest.newCall(AuthController.ROOT + AuthController.LOGOUT, HttpMethod.POST, String.class).withAuth()
+                    .call();
         } finally {
-            lastAccessToken = null;
-            lastRefreshToken = null;
+            rest.clearTokens();
         }
-    }
-
-    public ResponseEntity<TokenDTO> refreshToken() {
-        return newCall(AuthController.ROOT + AuthController.REFRESH, HttpMethod.POST, TokenDTO.class).withRefreshToken().call();
     }
 
     public TokenDTO refreshTokenOk() {
         return validateTokenRequest(refreshToken());
+    }
+
+    public ResponseEntity<TokenDTO> refreshToken() {
+        return rest.newCall(AuthController.ROOT + AuthController.REFRESH, HttpMethod.POST, TokenDTO.class)
+                .withRefreshToken().call();
     }
 
     public void assertFordMake(CarMakeDTO make) {
@@ -115,12 +98,12 @@ public class Testing {
 
     public ResponseEntity<CarMakeDTO> getCarMake(Long id) {
         String url = CarMakesController.ROOT + "/" + id;
-        return newCall(url, HttpMethod.GET, CarMakeDTO.class).withAuth().call();
+        return rest.newCall(url, HttpMethod.GET, CarMakeDTO.class).withAuth().call();
     }
 
     public ResponseEntity<Void> addCarMake(String name) {
         var dto = CarMakeDTO.builder().name(name).build();
-        var reply = newCall(CarMakesController.ROOT, HttpMethod.POST, Void.class).withRequest(dto)
+        var reply = rest.newCall(CarMakesController.ROOT, HttpMethod.POST, Void.class).withRequest(dto)
                 .withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -134,12 +117,12 @@ public class Testing {
 
     public ResponseEntity<CarModelDTO> getCarModel(Long id) {
         String url = CarModelsController.ROOT + "/" + id;
-        return newCall(url, HttpMethod.GET, CarModelDTO.class).withAuth().call();
+        return rest.newCall(url, HttpMethod.GET, CarModelDTO.class).withAuth().call();
     }
 
     public ResponseEntity<Void> addCarModel(String name, Long makeId, Integer year, Double price) {
         var dto = CarModelDTO.builder().name(name).carMakeId(makeId).year(year).price(price).build();
-        var reply = newCall(CarModelsController.ROOT, HttpMethod.POST, Void.class).withRequest(dto)
+        var reply = rest.newCall(CarModelsController.ROOT, HttpMethod.POST, Void.class).withRequest(dto)
                 .withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -153,12 +136,12 @@ public class Testing {
 
     public ResponseEntity<CarPartDTO> getCarPart(Long id) {
         String url = CarPartsController.ROOT + "/" + id;
-        return newCall(url, HttpMethod.GET, CarPartDTO.class).withAuth().call();
+        return rest.newCall(url, HttpMethod.GET, CarPartDTO.class).withAuth().call();
     }
 
     public ResponseEntity<Void> addCarPart(String name, Double price) {
         var dto = CarPartDTO.builder().name(name).price(price).build();
-        var reply = newCall(CarPartsController.ROOT, HttpMethod.POST, Void.class).withRequest(dto).withAuth()
+        var reply = rest.newCall(CarPartsController.ROOT, HttpMethod.POST, Void.class).withRequest(dto).withAuth()
                 .call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -170,12 +153,10 @@ public class Testing {
         addCarPart("Motor", 9500.50);
     }
 
-    public ResponseEntity<Void> addCarModelPart(Long modelId, Long partId) {
+    public void addCarModelPart(Long modelId, Long partId) {
         String url = CarModelsPartsController.ROOT.replace("{modelId}", modelId.toString()) + "/" + partId;
-        var reply = newCall(url, HttpMethod.POST, Void.class).withAuth().call();
+        var reply = rest.newCall(url, HttpMethod.POST, Void.class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
-        return reply;
     }
 
     public void addCarModelParts() {
@@ -191,49 +172,5 @@ public class Testing {
         addCarModels();
         addCarParts();
         addCarModelParts();
-    }
-
-    public class Call<RES> {
-        private final String uri;
-        private final HttpMethod method;
-        private final Class<RES> replyType;
-
-        private String token;
-        private Object request;
-
-        private Call(String uri, HttpMethod method, Class<RES> replyType) {
-            this.uri = uri;
-            this.method = method;
-            this.replyType = replyType;
-        }
-
-        public Call<RES> withRequest(Object request) {
-            this.request = request;
-            return this;
-        }
-
-        public Call<RES> withAuth() {
-            if (lastAccessToken == null) throw new IllegalStateException("No last access token available");
-            token = lastAccessToken;
-            return this;
-        }
-
-        public Call<RES> withRefreshToken() {
-            if (lastRefreshToken == null) throw new IllegalStateException("No last refresh token available");
-            token = lastRefreshToken;
-            return this;
-        }
-
-        public Call<RES> withToken(String token) {
-            this.token = token;
-            return this;
-        }
-
-        public ResponseEntity<RES> call() {
-            var headers = new HttpHeaders();
-            if (token != null) headers.set("Authorization", "Bearer " + token);
-
-            return restTemplate.exchange(uri, method, new HttpEntity<>(request, headers), replyType);
-        }
     }
 }

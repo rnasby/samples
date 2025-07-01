@@ -1,6 +1,6 @@
 package carPartsStore.controllers;
 
-import carPartsStore.Testing;
+import carPartsStore.AppTests;
 import carPartsStore.dto.CarPartDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,51 +17,51 @@ public class CarPartsControllerTest {
     // TODO: Add tests showing that login is required to change parts.
 
     @Autowired
-    Testing testing;
+    AppTests appTests;
 
     @Test
     @DirtiesContext
     void testCreateCarPart() {
-        testing.loginFred();
+        appTests.loginFred();
 
-        var voidReply = testing.addCarPart("Alternator", 500.50);
+        var voidReply = appTests.addCarPart("Alternator", 500.50);
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         var location = voidReply.getHeaders().get("location");
         assertThat(location).isNotNull();
 
-        var carPartReply = testing.newGet(location.getFirst(), CarPartDTO.class).withAuth().call();
+        var carPartReply = appTests.rest.newGet(location.getFirst(), CarPartDTO.class).withAuth().call();
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         var carPart = carPartReply.getBody();
         assertThat(carPart).isNotNull();
-        testing.assertAlternatorPart(carPart);
+        appTests.assertAlternatorPart(carPart);
     }
 
     @Test
     @DirtiesContext
     void testGetCarPart() {
-        testing.setup();
+        appTests.setup();
 
-        var carPartReply = testing.getCarPart(1L);
+        var carPartReply = appTests.getCarPart(1L);
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.OK);
         var carPart = carPartReply.getBody();
         assertThat(carPart).isNotNull();
-        testing.assertAlternatorPart(carPart);
+        appTests.assertAlternatorPart(carPart);
 
         assertThat(carPart.getCarModels().size()).isEqualTo(2L);
-        testing.assertMustangModel(carPart.getCarModels().getFirst());
+        appTests.assertMustangModel(carPart.getCarModels().getFirst());
     }
 
     @Test
     @DirtiesContext
     void testGetCarPartList() {
-        testing.setup();
+        appTests.setup();
 
-        var reply = testing.newGet(CarPartsController.ROOT, CarPartDTO[].class).withAuth().call();
+        var reply = appTests.rest.newGet(CarPartsController.ROOT, CarPartDTO[].class).withAuth().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(reply.getBody()).isNotNull();
 
         CarPartDTO[] parts = reply.getBody();
-        testing.assertAlternatorPart(parts[0]);
+        appTests.assertAlternatorPart(parts[0]);
         assertThat(parts[0].getCarModels()).isNull();
 
         assertThat(parts[1].getId()).isEqualTo(2L);
@@ -72,13 +72,13 @@ public class CarPartsControllerTest {
     @Test
     @DirtiesContext
     void testUpdateCarPart() {
-        testing.setup();
+        appTests.setup();
 
         var dto = CarPartDTO.builder().name("Bogus2").price(0.75).build();
-        var carPartReply = testing.newPut(CarPartsController.ROOT + "/1").withRequest(dto).withAuth().call();
+        var carPartReply = appTests.rest.newPut(CarPartsController.ROOT + "/1").withRequest(dto).withAuth().call();
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        dto = testing.getCarPart(1L).getBody();
+        dto = appTests.getCarPart(1L).getBody();
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(1L);
         assertThat(dto.getName()).isEqualTo("Bogus2");
@@ -88,12 +88,12 @@ public class CarPartsControllerTest {
     @Test
     @DirtiesContext
     void testDeleteCarPart() {
-        testing.setup();
+        appTests.setup();
 
-        var voidReply = testing.newDelete(CarPartsController.ROOT + "/1").withAuth().call();
+        var voidReply = appTests.rest.newDelete(CarPartsController.ROOT + "/1").withAuth().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        var carPartsReply = testing.getCarPart(1L);
+        var carPartsReply = appTests.getCarPart(1L);
         assertThat(carPartsReply.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }
