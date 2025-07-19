@@ -8,6 +8,10 @@ spring:
       ddl-auto: none
       # Don't need to Hibernate to populate the database, Spring did it already
 
+logging:
+  level:
+    org.springframework.security: TRACE
+
 custom:
   security:
     jwt:

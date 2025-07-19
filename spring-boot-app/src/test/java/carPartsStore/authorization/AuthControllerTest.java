@@ -1,6 +1,6 @@
 package carPartsStore.authorization;
 
-import carPartsStore.AppTests;
+import carPartsStore.Testing;
 import carPartsStore.auth.AuthController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,75 +18,75 @@ public class AuthControllerTest {
     static private final String REFRESH_PATH = AuthController.ROOT + AuthController.REFRESH;
 
     @Autowired
-    AppTests appTests;
+    Testing testing;
 
     @Test
     @DirtiesContext
     void testUserLogin() {
-        appTests.loginFred();
+        testing.loginFred();
     }
 
     @Test
     @DirtiesContext
     void testInvalidUserLogin() {
-        var reply = appTests.login("stone", "pebbles");
+        var reply = testing.login("stone", "pebbles");
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
     @DirtiesContext
     void testInvalidUserPasswordLogin() {
-        var reply = appTests.login("fred", "i dont know");
+        var reply = testing.login("fred", "i dont know");
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
     @DirtiesContext
     void testLogout() {
-        var tokens = appTests.loginFred();
-        appTests.logout();
+        var tokens = testing.loginFred();
+        testing.logout();
 
-        var strReply = appTests.rest.newPost(LOGOUT_PATH, String.class).withToken(tokens.accessToken()).call();
+        var strReply = testing.rest.newPost(LOGOUT_PATH).withToken(tokens.accessToken()).call();
         assertThat(strReply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
     @DirtiesContext
     void testLogoutWithoutJwt() {
-        var reply = appTests.rest.newPost(LOGOUT_PATH, String.class).call();
-        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        var reply = testing.rest.newPost(LOGOUT_PATH).call();
+        assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     @DirtiesContext
     void testRefreshToken() {
-        var oldTokens = appTests.loginFred();
-        var newTokens = appTests.refreshTokenOk();
+        testing.loginFred();
+        var newTokens = testing.refreshTokenOk();
 
         assertThat(newTokens.accessToken()).isNotNull();
         assertThat(newTokens.refreshToken()).isNotNull();
 
-        appTests.refreshTokenOk();
+        testing.refreshTokenOk();
     }
 
     @Test
     @DirtiesContext
     void testDisabledTokens() throws Exception {
-        var oldTokens = appTests.loginFred();
+        var oldTokens = testing.loginFred();
 
         Thread.sleep(1000L);
-        var newTokens = appTests.refreshTokenOk();
+        var newTokens = testing.refreshTokenOk();
         assertThat(newTokens.refreshToken()).isNotEqualTo(oldTokens.refreshToken());
 
-        var strReply = appTests.rest.newPost(REFRESH_PATH, String.class).withToken(oldTokens.refreshToken()).call();
+        var strReply = testing.rest.newPost(REFRESH_PATH).withToken(oldTokens.refreshToken()).call();
         assertThat(strReply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
     @DirtiesContext
     void testCannotUseRegularTokenForRefresh() {
-        var loginTokens = appTests.loginFred();
-        var reply = appTests.rest.newPost(REFRESH_PATH, Void.class).withToken(loginTokens.accessToken()).call();
+        var loginTokens = testing.loginFred();
+        var reply = testing.rest.newPost(REFRESH_PATH).withToken(loginTokens.accessToken()).call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 }

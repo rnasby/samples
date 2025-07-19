@@ -1,6 +1,6 @@
 package carPartsStore.controllers;
 
-import carPartsStore.AppTests;
+import carPartsStore.Testing;
 import carPartsStore.dto.CarPartDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,31 +15,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CarModelsPartsControllerTest {
     @Autowired
-    AppTests appTests;
+    Testing testing;
 
     @Test
     @DirtiesContext
     void testAddModelCarPart() {
-        appTests.loginFred();
-        appTests.addCarMakes();
-        appTests.addCarModels();
-        appTests.addCarParts();
+        testing.loginFred();
+        testing.addCarMakes();
+        testing.addCarModels();
+        testing.addCarParts();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1") + "/1";
-        var reply = appTests.rest.newPost(url, Void.class).withAuth().call();
+        var reply = testing.rest.newPost(url).withAccessToken().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
     @Test
     @DirtiesContext
     void testGetModelParts() {
-        appTests.setup();
+        testing.setup();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1");
-        var reply = appTests.rest.newGet(url, CarPartDTO[].class).withAuth().call();
+        var reply = testing.rest.newGet(url).withAccessToken().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        var carParts = reply.getBody();
+        var carParts = reply.parseBody(CarPartDTO[].class);
         assertThat(carParts).hasSize(2);
 
         assertThat(carParts[0].getId()).isEqualTo(1L);
@@ -50,17 +50,17 @@ public class CarModelsPartsControllerTest {
     @Test
     @DirtiesContext
     void testDeleteModelPart() {
-        appTests.setup();
+        testing.setup();
 
         String url = CarModelsPartsController.ROOT.replace("{modelId}", "1") + "/1";
-        var voidReply = appTests.rest.newDelete(url).withAuth().call();
+        var voidReply = testing.rest.newDelete(url).withAccessToken().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         url = CarModelsPartsController.ROOT.replace("{modelId}", "1");
-        var carPartsReply = appTests.rest.newGet(url, CarPartDTO[].class).withAuth().call();
+        var carPartsReply = testing.rest.newGet(url).withAccessToken().call();
         assertThat(carPartsReply.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        var carParts = carPartsReply.getBody();
+        var carParts = carPartsReply.parseBody(CarPartDTO[].class);
         assertThat(carParts).hasSize(1);
         assertThat(carParts[0].getId()).isEqualTo(2L);
         assertThat(carParts[0].getName()).isEqualTo("Motor");

@@ -1,6 +1,6 @@
 package carPartsStore.controllers;
 
-import carPartsStore.AppTests;
+import carPartsStore.Testing;
 import carPartsStore.dto.CarPartDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,51 +17,48 @@ public class CarPartsControllerTest {
     // TODO: Add tests showing that login is required to change parts.
 
     @Autowired
-    AppTests appTests;
+    Testing testing;
 
     @Test
     @DirtiesContext
     void testCreateCarPart() {
-        appTests.loginFred();
+        testing.loginFred();
 
-        var voidReply = appTests.addCarPart("Alternator", 500.50);
+        var voidReply = testing.addCarPart("Alternator", 500.50);
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         var location = voidReply.getHeaders().get("location");
         assertThat(location).isNotNull();
 
-        var carPartReply = appTests.rest.newGet(location.getFirst(), CarPartDTO.class).withAuth().call();
+        var carPartReply = testing.rest.newGet(location.getFirst()).withAccessToken().call();
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.OK);
-        var carPart = carPartReply.getBody();
-        assertThat(carPart).isNotNull();
-        appTests.assertAlternatorPart(carPart);
+        var carPart = carPartReply.parseBody(CarPartDTO.class);
+        testing.assertAlternatorPart(carPart);
     }
 
     @Test
     @DirtiesContext
     void testGetCarPart() {
-        appTests.setup();
+        testing.setup();
 
-        var carPartReply = appTests.getCarPart(1L);
+        var carPartReply = testing.getCarPart(1L);
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.OK);
-        var carPart = carPartReply.getBody();
-        assertThat(carPart).isNotNull();
-        appTests.assertAlternatorPart(carPart);
+        var carPart = carPartReply.parseBody(CarPartDTO.class);
+        testing.assertAlternatorPart(carPart);
 
         assertThat(carPart.getCarModels().size()).isEqualTo(2L);
-        appTests.assertMustangModel(carPart.getCarModels().getFirst());
+        testing.assertMustangModel(carPart.getCarModels().getFirst());
     }
 
     @Test
     @DirtiesContext
     void testGetCarPartList() {
-        appTests.setup();
+        testing.setup();
 
-        var reply = appTests.rest.newGet(CarPartsController.ROOT, CarPartDTO[].class).withAuth().call();
+        var reply = testing.rest.newGet(CarPartsController.ROOT).withAccessToken().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(reply.getBody()).isNotNull();
 
-        CarPartDTO[] parts = reply.getBody();
-        appTests.assertAlternatorPart(parts[0]);
+        CarPartDTO[] parts = reply.parseBody(CarPartDTO[].class);
+        testing.assertAlternatorPart(parts[0]);
         assertThat(parts[0].getCarModels()).isNull();
 
         assertThat(parts[1].getId()).isEqualTo(2L);
@@ -72,14 +69,13 @@ public class CarPartsControllerTest {
     @Test
     @DirtiesContext
     void testUpdateCarPart() {
-        appTests.setup();
+        testing.setup();
 
         var dto = CarPartDTO.builder().name("Bogus2").price(0.75).build();
-        var carPartReply = appTests.rest.newPut(CarPartsController.ROOT + "/1").withRequest(dto).withAuth().call();
+        var carPartReply = testing.rest.newPut(CarPartsController.ROOT + "/1").withRequest(dto).withAccessToken().call();
         assertThat(carPartReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        dto = appTests.getCarPart(1L).getBody();
-        assertThat(dto).isNotNull();
+        dto = testing.getCarPart(1L).parseBody(CarPartDTO.class);
         assertThat(dto.getId()).isEqualTo(1L);
         assertThat(dto.getName()).isEqualTo("Bogus2");
         assertThat(dto.getPrice()).isEqualTo(0.75);
@@ -88,12 +84,12 @@ public class CarPartsControllerTest {
     @Test
     @DirtiesContext
     void testDeleteCarPart() {
-        appTests.setup();
+        testing.setup();
 
-        var voidReply = appTests.rest.newDelete(CarPartsController.ROOT + "/1").withAuth().call();
+        var voidReply = testing.rest.newDelete(CarPartsController.ROOT + "/1").withAccessToken().call();
         assertThat(voidReply.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        var carPartsReply = appTests.getCarPart(1L);
+        var carPartsReply = testing.getCarPart(1L);
         assertThat(carPartsReply.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }

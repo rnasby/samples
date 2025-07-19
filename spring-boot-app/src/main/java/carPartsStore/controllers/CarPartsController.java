@@ -4,6 +4,9 @@ import carPartsStore.db.CarPart;
 import carPartsStore.db.CarPartRepository;
 import carPartsStore.dto.CarModelDTO;
 import carPartsStore.dto.CarPartDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -15,7 +18,9 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping(CarPartsController.ROOT)
+@SecurityRequirement(name = "bearerAuth")
+@RequestMapping(value = CarPartsController.ROOT)
+@Tag(name = CarPartsController.NAME, description = CarPartsController.NAME + " management API")
 public class CarPartsController {
     static public final String NAME = "car-parts";
     static public final String ROOT = "/" + NAME;
@@ -27,6 +32,7 @@ public class CarPartsController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Retrieve " + NAME + " entry by id")
     private ResponseEntity<CarPartDTO> getById(@PathVariable Long id) {
         var entity = repository.findById(id).orElse(null);
         if (entity == null) return ResponseEntity.notFound().build();
@@ -38,6 +44,7 @@ public class CarPartsController {
     }
 
     @GetMapping
+    @Operation(summary = "Get list of " + NAME + " entries")
     private ResponseEntity<List<CarPartDTO>> findAll(Pageable pageable) {
         var page = repository.findAll(PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSortOr(Sort.by(Sort.Direction.ASC, "id"))));
@@ -46,6 +53,7 @@ public class CarPartsController {
     }
 
     @PostMapping
+    @Operation(summary = "Create new " + NAME + " entry")
     private ResponseEntity<Void> create(@RequestBody CarPartDTO request, UriComponentsBuilder ucb) {
         var entity = repository.save(new CarPart(request));
         URI location = ucb.path(NAME + "/{id}").buildAndExpand(entity.getId()).toUri();
@@ -54,6 +62,7 @@ public class CarPartsController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update " + NAME + " entry")
     private ResponseEntity<Void> update(@PathVariable Long id, @RequestBody CarPartDTO request) {
         var entity = repository.findById(id).orElse(null);
         if (entity == null) return ResponseEntity.notFound().build();
@@ -66,6 +75,7 @@ public class CarPartsController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete " + NAME + " entry")
     private ResponseEntity<Void> delete(@PathVariable Long id) {
         if (repository.existsById(id)) {
             repository.deleteById(id);

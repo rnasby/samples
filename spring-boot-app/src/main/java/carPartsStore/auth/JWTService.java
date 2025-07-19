@@ -1,7 +1,6 @@
 package carPartsStore.auth;
 
 import carPartsStore.ApplicationTraits;
-import carPartsStore.error.BadTokenException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.*;

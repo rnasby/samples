@@ -2,6 +2,9 @@ package carPartsStore.controllers;
 
 import carPartsStore.db.*;
 import carPartsStore.dto.CarPartDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -10,7 +13,9 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping(CarModelsPartsController.ROOT)
+@SecurityRequirement(name = "bearerAuth")
+@RequestMapping(value = CarModelsPartsController.ROOT)
+@Tag(name = CarModelsPartsController.NAME, description = CarModelsPartsController.NAME + " management API")
 public class CarModelsPartsController {
     static public final String NAME = CarModelsController.NAME + "/{modelId}/parts";
     static public final String ROOT = "/" + NAME;
@@ -24,6 +29,7 @@ public class CarModelsPartsController {
     }
 
     @GetMapping
+    @Operation(summary = "Get list of " + NAME + " entries")
     private ResponseEntity<List<CarPartDTO>> findAll(@PathVariable Long modelId) {
         var model = modelRepository.findById(modelId).orElse(null);
         if (model == null) return ResponseEntity.notFound().build();
@@ -32,6 +38,7 @@ public class CarModelsPartsController {
     }
 
     @PostMapping("/{partId}")
+    @Operation(summary = "Create new " + NAME + " entry")
     private ResponseEntity<Void> create(@PathVariable Long modelId, @PathVariable Long partId, UriComponentsBuilder ucb) {
         var model = modelRepository.findById(modelId).orElse(null);
         if (model == null) return ResponseEntity.notFound().build();
@@ -47,6 +54,7 @@ public class CarModelsPartsController {
     }
 
     @DeleteMapping("/{partId}")
+    @Operation(summary = "Delete " + NAME + " entry")
     private ResponseEntity<Void> delete(@PathVariable Long modelId, @PathVariable Long partId) {
         var model = modelRepository.findById(modelId).orElse(null);
         if (model == null) return ResponseEntity.notFound().build();

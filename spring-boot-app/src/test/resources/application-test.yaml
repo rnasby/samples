@@ -11,14 +11,8 @@ spring:
 #    username: ${DB_USERNAME}
 #    password: ${DB_PASSWORD}
 
-custom:
-  security:
-    jwt:
-      secret-key: "${random.uuid}"
-      refresh-token-timeout-min: 120
-
-logging:
-  level:
-    org:
-      springframework:
-        security: TRACE
+#logging:
+#  level:
+#    org:
+#      springframework:
+#        security: TRACE

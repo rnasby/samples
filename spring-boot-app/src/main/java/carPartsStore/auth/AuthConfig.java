@@ -7,8 +7,16 @@ import carPartsStore.controllers.CarPartsController;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -50,16 +58,31 @@ public class AuthConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        String authMatcher = AuthController.ROOT + "/**";
+    @Order(1)
+    public SecurityFilterChain basicAuthSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .httpBasic(Customizer.withDefaults())
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            .securityMatcher(AuthController.ROOT + AuthController.LOGIN, "/swagger-ui/**", "/v3/api-docs/**",
+                    "/swagger-resources/**");
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
+    public SecurityFilterChain jwtSecurityFilterChain(HttpSecurity http) throws Exception {
         var appMatchers = Stream.of(CarMakesController.ROOT, CarModelsController.ROOT, CarPartsController.ROOT)
                 .map(p -> p + "/**").toList();
+        var authMatchers = Stream.of(AuthController.REFRESH, AuthController.LOGOUT).map(p -> AuthController.ROOT + p)
+                .toList();
+        var securityMatchers = Stream.concat(appMatchers.stream(), authMatchers.stream()).toArray(String[]::new);
 
         http
-            // Disable CSRF (not needed for stateless JWT)
-            .csrf(AbstractHttpConfigurer::disable)
-
+            .securityMatcher(securityMatchers)
             .httpBasic(Customizer.withDefaults())
+            .csrf(AbstractHttpConfigurer::disable)
             .oauth2ResourceServer(auth -> auth.jwt(Customizer.withDefaults()))
 
             // Stateless session (required for JWT)
@@ -67,7 +90,7 @@ public class AuthConfig {
 
             // Configure endpoint authorization
             .authorizeHttpRequests(auth -> {
-                auth.requestMatchers(HttpMethod.POST, authMatcher).permitAll();
+                auth.requestMatchers(HttpMethod.POST, authMatchers.toArray(new String[0])).permitAll();
 
                 appMatchers.forEach(matcher -> {
                     auth.requestMatchers(HttpMethod.GET, matcher).hasAnyAuthority(
@@ -85,5 +108,25 @@ public class AuthConfig {
             });
 
         return http.build();
+    }
+
+    @Bean
+    public OpenAPI openAPI() {
+        var license = new License().name("TODO license name").url("TODO license URL");
+        var bearerScheme = new SecurityScheme().type(SecurityScheme.Type.HTTP).bearerFormat("JWT").scheme("bearer");
+        var basicScheme = new SecurityScheme().name("basicAuth").type(SecurityScheme.Type.HTTP).scheme("basic");
+        var components = new Components()
+                .addSecuritySchemes("basicAuth", basicScheme)
+                .addSecuritySchemes("Bearer Authentication", bearerScheme);
+        var contact = new Contact().name("Ron Nasby").email("RonNasbyTech.com").url("ronald.nasby@gmail.com");
+        var info = new Info()
+            .license(license)
+            .title("Car Parts REST API")
+            .description("TODO description")
+            .version("1.0")
+            .contact(contact);
+
+        return new OpenAPI().addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
+                .components(components).info(info);
     }
 }

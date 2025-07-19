@@ -1,4 +1,4 @@
-package carPartsStore.error;
+package carPartsStore.auth;
 
 import java.io.Serial;
 

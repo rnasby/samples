@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 
 @Component
-public class BogusUserDetailsManager extends InMemoryUserDetailsManager {
+public class SimpleUserDetailsManager extends InMemoryUserDetailsManager {
     static private UserDetails newUserDetails(String username, String password, String[] roles) {
         return User.withUsername(username).password(password).roles(roles).build();
     }
@@ -18,7 +18,7 @@ public class BogusUserDetailsManager extends InMemoryUserDetailsManager {
         return newUserDetails(username, password, roleStrs);
     }
 
-    BogusUserDetailsManager() {
+    SimpleUserDetailsManager() {
         super(
             newUserDetails("fred", "{noop}pebbles", UserRole.USER, UserRole.ADMIN),
             newUserDetails("barney", "{noop}bambam", UserRole.USER)

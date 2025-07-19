@@ -15,12 +15,10 @@ import org.springframework.stereotype.Component;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Component
-public class AppTests {
+public class Testing {
     public final RestTests rest;
-    private final TestRestTemplate restTemplate;
 
-    AppTests(TestRestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    Testing(TestRestTemplate restTemplate) {
         this.rest = new RestTests(restTemplate);
     }
 
@@ -29,40 +27,35 @@ public class AppTests {
     }
 
     public TokenDTO loginOk(String username, String password) {
-        var dto = validateTokenRequest(login(username, password));
-
-        assertThat(dto.refreshToken()).isNotNull();
-        rest.setLastRefreshToken(dto.refreshToken());
-
-        return dto;
+        return validateTokenRequest(login(username, password));
     }
 
-    public ResponseEntity<TokenDTO> login(String username, String password) {
-        return restTemplate.withBasicAuth(username, password).postForEntity(AuthController.ROOT + AuthController.LOGIN,
-                null, TokenDTO.class);
+    public RestTests.Reply login(String username, String password) {
+        return rest.newPost(AuthController.ROOT + AuthController.LOGIN).withBasicAuth(username, password).call();
     }
 
-    private TokenDTO validateTokenRequest(ResponseEntity<TokenDTO> reply) {
+    private TokenDTO validateTokenRequest(RestTests.Reply reply) {
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(reply.hasBody()).isTrue();
 
         var headers = reply.getHeaders().get("Content-Type");
         assertThat(headers).isNotNull();
         assertThat(headers.getFirst()).isEqualTo(MediaType.APPLICATION_JSON.toString());
 
-        var dto = reply.getBody();
-        assertThat(dto).isNotNull();
+        var dto = reply.parseBody(TokenDTO.class);
 
         assertThat(dto.accessToken()).isNotNull();
         rest.setLastAccessToken(dto.accessToken());
 
+        assertThat(dto.refreshToken()).isNotNull();
+        rest.setLastRefreshToken(dto.refreshToken());
+
+
         return dto;
     }
 
-    public ResponseEntity<String> logout() {
+    public RestTests.Reply logout() {
         try {
-            return rest.newCall(AuthController.ROOT + AuthController.LOGOUT, HttpMethod.POST, String.class).withAuth()
-                    .call();
+            return rest.newCall(AuthController.ROOT + AuthController.LOGOUT, HttpMethod.POST).withAccessToken().call();
         } finally {
             rest.clearTokens();
         }
@@ -72,9 +65,8 @@ public class AppTests {
         return validateTokenRequest(refreshToken());
     }
 
-    public ResponseEntity<TokenDTO> refreshToken() {
-        return rest.newCall(AuthController.ROOT + AuthController.REFRESH, HttpMethod.POST, TokenDTO.class)
-                .withRefreshToken().call();
+    public RestTests.Reply refreshToken() {
+        return rest.newCall(AuthController.ROOT + AuthController.REFRESH, HttpMethod.POST).withLastRefreshToken().call();
     }
 
     public void assertFordMake(CarMakeDTO make) {
@@ -96,15 +88,15 @@ public class AppTests {
         assertThat(part.getPrice()).isEqualTo(500.50);
     }
 
-    public ResponseEntity<CarMakeDTO> getCarMake(Long id) {
+    public RestTests.Reply getCarMake(Long id) {
         String url = CarMakesController.ROOT + "/" + id;
-        return rest.newCall(url, HttpMethod.GET, CarMakeDTO.class).withAuth().call();
+        return rest.newCall(url, HttpMethod.GET).withAccessToken().call();
     }
 
-    public ResponseEntity<Void> addCarMake(String name) {
+    public RestTests.Reply addCarMake(String name) {
         var dto = CarMakeDTO.builder().name(name).build();
-        var reply = rest.newCall(CarMakesController.ROOT, HttpMethod.POST, Void.class).withRequest(dto)
-                .withAuth().call();
+        var reply = rest.newCall(CarMakesController.ROOT, HttpMethod.POST).withRequest(dto)
+                .withAccessToken().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -115,15 +107,15 @@ public class AppTests {
         addCarMake("Chevy");
     }
 
-    public ResponseEntity<CarModelDTO> getCarModel(Long id) {
+    public RestTests.Reply getCarModel(Long id) {
         String url = CarModelsController.ROOT + "/" + id;
-        return rest.newCall(url, HttpMethod.GET, CarModelDTO.class).withAuth().call();
+        return rest.newCall(url, HttpMethod.GET).withAccessToken().call();
     }
 
-    public ResponseEntity<Void> addCarModel(String name, Long makeId, Integer year, Double price) {
+    public RestTests.Reply addCarModel(String name, Long makeId, Integer year, Double price) {
         var dto = CarModelDTO.builder().name(name).carMakeId(makeId).year(year).price(price).build();
-        var reply = rest.newCall(CarModelsController.ROOT, HttpMethod.POST, Void.class).withRequest(dto)
-                .withAuth().call();
+        var reply = rest.newCall(CarModelsController.ROOT, HttpMethod.POST).withRequest(dto).withAccessToken()
+                .call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -134,15 +126,14 @@ public class AppTests {
         addCarModel("Corvette", 2L, 1981, 15000.00);
     }
 
-    public ResponseEntity<CarPartDTO> getCarPart(Long id) {
+    public RestTests.Reply getCarPart(Long id) {
         String url = CarPartsController.ROOT + "/" + id;
-        return rest.newCall(url, HttpMethod.GET, CarPartDTO.class).withAuth().call();
+        return rest.newCall(url, HttpMethod.GET).withAccessToken().call();
     }
 
-    public ResponseEntity<Void> addCarPart(String name, Double price) {
+    public RestTests.Reply addCarPart(String name, Double price) {
         var dto = CarPartDTO.builder().name(name).price(price).build();
-        var reply = rest.newCall(CarPartsController.ROOT, HttpMethod.POST, Void.class).withRequest(dto).withAuth()
-                .call();
+        var reply = rest.newCall(CarPartsController.ROOT, HttpMethod.POST).withRequest(dto).withAccessToken().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         return reply;
@@ -155,7 +146,7 @@ public class AppTests {
 
     public void addCarModelPart(Long modelId, Long partId) {
         String url = CarModelsPartsController.ROOT.replace("{modelId}", modelId.toString()) + "/" + partId;
-        var reply = rest.newCall(url, HttpMethod.POST, Void.class).withAuth().call();
+        var reply = rest.newCall(url, HttpMethod.POST).withAccessToken().call();
         assertThat(reply.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 

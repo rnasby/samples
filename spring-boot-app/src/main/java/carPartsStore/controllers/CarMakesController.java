@@ -4,6 +4,9 @@ import carPartsStore.db.CarMake;
 import carPartsStore.db.CarMakeRepository;
 import carPartsStore.dto.CarMakeDTO;
 import carPartsStore.dto.CarModelDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,7 +17,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 
 @RestController
-@RequestMapping(CarMakesController.ROOT)
+@SecurityRequirement(name = "Bearer Authentication")
+@RequestMapping(value = CarMakesController.ROOT)
+@Tag(name = CarMakesController.NAME, description = CarMakesController.NAME + " management API")
 public class CarMakesController {
     static public final String NAME = "car-makes";
     static public final String ROOT = "/" + NAME;
@@ -26,6 +31,7 @@ public class CarMakesController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Retrieve " + NAME + " entry by id")
     private ResponseEntity<CarMakeDTO> getById(@PathVariable Long id) {
         var entity = repository.findById(id).orElse(null);
         if (entity == null) return ResponseEntity.notFound().build();
@@ -37,6 +43,7 @@ public class CarMakesController {
     }
 
     @GetMapping
+    @Operation(summary = "Get list of " + NAME + " entries")
     private ResponseEntity<Iterable<CarMakeDTO>> findAll(Pageable pageable) {
         var page = repository.findAll(PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSortOr(Sort.by(Sort.Direction.ASC, "id"))));
@@ -45,6 +52,7 @@ public class CarMakesController {
     }
 
     @PostMapping
+    @Operation(summary = "Create new " + NAME + " entry")
     private ResponseEntity<Void> create(@RequestBody CarMakeDTO request, UriComponentsBuilder ucb) {
         var entity = repository.save(new CarMake(request.getName()));
         URI location = ucb.path(NAME + "/{id}").buildAndExpand(entity.getId()).toUri();
@@ -53,6 +61,7 @@ public class CarMakesController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update " + NAME + " entry")
     private ResponseEntity<Void> update(@PathVariable Long id, @RequestBody CarMakeDTO request) {
         var entity = repository.findById(id).orElse(null);
         if (entity == null) return ResponseEntity.notFound().build();
@@ -64,6 +73,7 @@ public class CarMakesController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete " + NAME + " entry")
     private ResponseEntity<Void> delete(@PathVariable Long id) {
         if (repository.existsById(id)) {
             repository.deleteById(id);
