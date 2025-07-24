@@ -26,4 +26,4 @@ jobs:
     - name: Update dependency graph
       uses: advanced-security/maven-dependency-submission-action@v5
       with:
-        directory: spring-boot-app
+        directory: ../spring-boot-app
