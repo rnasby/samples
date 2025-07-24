@@ -22,8 +22,9 @@ jobs:
         # Change download messages to warn.
         export MAVEN_OPTS=-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
         ./mvnw -B package
-
+        
     - name: Update dependency graph
       uses: advanced-security/maven-dependency-submission-action@v3
-        with:
-          directory: ./spring-boot-app
+      with:
+        directory: ./spring-boot-app
+
