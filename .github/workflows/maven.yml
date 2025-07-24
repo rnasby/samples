@@ -18,7 +18,7 @@ jobs:
     - name: Build spring-boot-app
       working-directory: ./spring-boot-app
       run: |
-        # chmod +x ./mvnw
+        chmod +x ./mvnw
         # Change download messages to warn.
         export MAVEN_OPTS=-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
         ./mvnw -B package
