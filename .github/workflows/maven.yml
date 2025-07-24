@@ -24,6 +24,6 @@ jobs:
         ./mvnw -B package
         
     - name: Update dependency graph
-      uses: advanced-security/maven-dependency-submission-action@v3
+      uses: advanced-security/maven-dependency-submission-action@v5
       with:
         directory: spring-boot-app
